@@ -74,7 +74,7 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
             : inputFiles;
     const filteredOutputFiles =
         typeof filterOutput === "function"
-            ? inputFiles.filter(filterOutput)
+            ? outputFiles.filter(filterOutput)
             : outputFiles;
 
     const inputFilesSet = new Set(filteredInputFiles);
@@ -131,9 +131,10 @@ function cleanOutputDirectory(inputFilesSet, outputFiles, outputDirectory) {
         const outputPath = path.resolve(outputDirectory, filePath);
 
         try {
-            if (!fs.existsSync(outputPath)) continue;
             console.log(
-                `File path ${filePath} no longer exists in input path. Deleting...`
+                `File '${path.basename(
+                    filePath
+                )}' no longer exists in input path. Deleting...`
             );
             fs.unlinkSync(outputPath);
         } catch (error) {
