@@ -10,5 +10,19 @@
         "./fs": "./fs/index.js",
         "./json": "./json/index.js",
         "./misc": "./misc/index.js"
-    }
+    },
+    "scripts": {
+        "debug": "./.debug/debug.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/daisybells/-gs-utils.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/daisybells/-gs-utils/issues"
+    },
+    "homepage": "https://github.com/daisybells/-gs-utils#readme"
 }
