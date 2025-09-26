@@ -1,0 +1,14 @@
+{
+    "name": "@gs/utils",
+    "version": "1.0.0",
+    "description": "Local collection of utilities.",
+    "main": "index.js",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./index.js",
+        "./fs": "./fs/index.js",
+        "./json": "./json/index.js",
+        "./misc": "./misc/index.js"
+    }
+}
