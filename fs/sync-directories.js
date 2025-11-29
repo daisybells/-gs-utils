@@ -7,7 +7,7 @@ import fs from "node:fs";
 const defaultOptions = {
     filterInput: null,
     filterOutput: null,
-    compareFiles: fileStatsAreDifferent,
+    compare: compareFileStatSize,
     cleanDirectory: true,
     cleanEmpty: true,
 };
@@ -31,7 +31,8 @@ const defaultOptions = {
  * @callback compare
  * @param {PathLike} filePathA - First file path to be compared.
  * @param {PathLike} filePathB - Second file path to be compared.
- * @returns {Boolean} - Deretmins whether the files are the same or different.
+ * @returns {Boolean} - Returns (true) if file stats are the same, returns (false)
+ * if file stats are different.
  */
 
 /**
@@ -46,7 +47,8 @@ const defaultOptions = {
  * @param {pathFilter} [inputOptions.filterOutput = null] - Callback function that filters
  * output folder's files. Default null returns original array.
  * @param {compare} [inputOptions.compareFiles] - Callback function that determines
- * if files should or shouldn't be copied. Default compares {stat.size} and {stat.mtime}.
+ * if files should be copied (true) or should be ignored (false).
+ * Default compares {stat.size} and {stat.mtime}.
  * @param {Boolean} [inputOptions.cleanDirectory = true] - Determines whether to delete
  * loose files or keep them. Set to true by default.
  */
@@ -57,13 +59,8 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     console.log(`Destination: ${outputDirectory}`);
 
     const options = { ...defaultOptions, ...inputOptions };
-    const {
-        filterInput,
-        filterOutput,
-        compareFiles,
-        cleanDirectory,
-        cleanEmpty,
-    } = options;
+    const { filterInput, filterOutput, compare, cleanDirectory, cleanEmpty } =
+        options;
 
     const inputFiles = await searchFilesRecursive(inputDirectory);
     const outputFiles = await searchFilesRecursive(outputDirectory);
@@ -88,10 +85,11 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
 
         // eslint-disable-next-line no-await-in-loop
         const filesAreSame = await Promise.resolve(
-            compareFiles(inputPath, outputPath)
+            compare(inputPath, outputPath)
         );
+        const existsInOutputPath = outputFilesSet.has(filePath);
 
-        const needsCopy = !outputFilesSet.has(filePath) && filesAreSame;
+        const needsCopy = !existsInOutputPath || !filesAreSame;
 
         if (!needsCopy) {
             existingPaths++;
@@ -102,7 +100,7 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
             continue;
         }
 
-        console.log(`\n➕ Copying file ${filePath}`);
+        console.log(`➕ Copying file ${filePath}`);
 
         const outputPathDirectory = path.dirname(outputPath);
         if (!fs.existsSync(outputPathDirectory))
@@ -143,16 +141,18 @@ function cleanOutputDirectory(inputFilesSet, outputFiles, outputDirectory) {
     }
 }
 
-function fileStatsAreDifferent(filePathA, filePathB) {
+function compareFileStatSize(filePathA, filePathB) {
     try {
         const [statsA, statsB] = [
             fs.statSync(filePathA),
             fs.statSync(filePathB),
         ];
+        const sizeIsSame = statsA.size === statsB.size;
+        const mTimeIsSame = statsA.mtime === statsB.mtime;
 
-        return statsA.size !== statsB.size || statsA.mtimeMs !== statsB.mtimeMs;
+        return sizeIsSame && mTimeIsSame;
     } catch {
-        return true;
+        return false;
     }
 }
 

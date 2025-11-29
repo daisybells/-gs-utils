@@ -25,6 +25,8 @@ import path from "node:path";
  * files.
  * @param {Boolean} [inputOptions.includeDirectories = false] - Determines whether or not
  * to include directories in search
+ * @param {Boolean} [inputOptions.asRoot = false] - Determines if the input directory
+ * should be treated as a root directory.
  *
  * @param {PathLike} base - Dummy input that remains equal to original input directory
  * throughout recursive search.
@@ -39,10 +41,16 @@ async function searchFilesRecursive(
         fullPath: false,
         filter: null,
         includeDirectories: false,
+        asRoot: false,
     };
     const options = { ...defaultOptions, ...inputOptions };
 
-    const { fullPath: fullPathBoolean, filter, includeDirectories } = options;
+    const {
+        fullPath: fullPathBoolean,
+        asRoot,
+        filter,
+        includeDirectories,
+    } = options;
 
     const entries = await fs.readdir(directory, { withFileTypes: true });
     const files = await Promise.all(
@@ -67,6 +75,8 @@ async function searchFilesRecursive(
     if (fullPathBoolean)
         return filteredFiles.map((filePath) => path.resolve(base, filePath));
 
+    if (asRoot)
+        return filteredFiles.map((filePath) => path.join("/", filePath));
     return filteredFiles;
 }
 export { searchFilesRecursive };

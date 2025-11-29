@@ -25,9 +25,14 @@ async function cleanEmptyFoldersRecursively(folder) {
         const hasDsStore = (await fs.readdir(folder)).some(
             (file) => file === ".DS_Store"
         );
-        console.log("removing: ", folder);
+        console.log(`removing: '${folder}'`);
         if (hasDsStore) await fs.rm(path.join(folder, ".DS_Store"));
-        await fs.rmdir(folder);
+        try {
+            await fs.rmdir(folder);
+        } catch (error) {
+            if (error.code !== "ENOENT") throw new Error(error);
+            console.warn(`Warning: Folder path '${folder}' does not exist`);
+        }
     }
 }
 
