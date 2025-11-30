@@ -1,8 +1,10 @@
 import path from "node:path";
 import readline from "node:readline";
+import { mapFilterAsync } from "../misc/map-filter.js";
 import { searchFilesRecursive } from "./search-files-recursive.js";
 import { cleanEmptyFoldersRecursively } from "./clean-empty-folders-recursive.js";
-import fs from "node:fs";
+import fs from "node:fs/promises";
+import { existsSync } from "node:fs";
 
 const defaultOptions = {
     filterInput: null,
@@ -10,6 +12,7 @@ const defaultOptions = {
     compare: filesAreSame,
     cleanDirectory: true,
     cleanEmpty: true,
+    logProgress: true,
 };
 
 /**
@@ -59,8 +62,14 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     console.log(`Destination: ${outputDirectory}`);
 
     const options = { ...defaultOptions, ...inputOptions };
-    const { filterInput, filterOutput, compare, cleanDirectory, cleanEmpty } =
-        options;
+    const {
+        filterInput,
+        filterOutput,
+        compare,
+        cleanDirectory,
+        cleanEmpty,
+        logProgress: doLogProgress,
+    } = options;
 
     const inputFiles = await searchFilesRecursive(inputDirectory);
     const outputFiles = await searchFilesRecursive(outputDirectory);
@@ -77,51 +86,71 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     const inputFilesSet = new Set(filteredInputFiles);
     const outputFilesSet = new Set(filteredOutputFiles);
 
-    let existingPaths = 0;
-
-    for (const filePath of filteredInputFiles) {
-        const inputPath = path.resolve(inputDirectory, filePath);
-        const outputPath = path.resolve(outputDirectory, filePath);
-
-        // eslint-disable-next-line no-await-in-loop
-        const filesAreSame = await Promise.resolve(
-            compare(inputPath, outputPath)
-        );
-        const existsInOutputPath = outputFilesSet.has(filePath);
-
-        const needsCopy = !existsInOutputPath || !filesAreSame;
-
-        if (!needsCopy) {
-            existingPaths++;
-            readline.cursorTo(process.stdout, 0);
-            process.stdout.write(
-                `[${existingPaths}] File path(s) already exist.`
+    const filesToCopy = await mapFilterAsync(
+        filteredInputFiles,
+        async (filePath) => {
+            const inputPath = path.join(inputDirectory, filePath);
+            const outputPath = path.join(outputDirectory, filePath);
+            const existsInOutputPath = outputFilesSet.has(filePath);
+            const filesAreSame = await Promise.resolve(
+                compare(inputPath, outputPath)
             );
-            continue;
+            const needsCopy = !existsInOutputPath && !filesAreSame;
+            if (!needsCopy) return null;
+            return {
+                input: inputPath,
+                output: outputPath,
+            };
         }
+    );
+    const numberOfFilesToCopy = filesToCopy.length;
+    if (numberOfFilesToCopy > 0) {
+        const existingPaths = filteredInputFiles.length - numberOfFilesToCopy;
+        console.log(
+            `${existingPaths} files already exist in output directory. Copying the remaining ${numberOfFilesToCopy} files...`
+        );
+        let copiedFiles = 0;
+        const logProgress = logProgressCurry(numberOfFilesToCopy);
 
-        console.log(`➕ Copying file ${filePath}`);
+        const copyFilePromises = filesToCopy.map(async (file) => {
+            const { input, output } = file;
+            const outputDirname = path.dirname(output);
 
-        const outputPathDirectory = path.dirname(outputPath);
-        if (!fs.existsSync(outputPathDirectory))
-            fs.mkdirSync(outputPathDirectory, { recursive: true });
+            if (!existsSync(outputDirname)) {
+                await fs.mkdir(outputDirname, { recursive: true });
+            }
+            await fs.copyFile(input, output);
 
-        fs.copyFileSync(inputPath, outputPath);
+            if (doLogProgress) {
+                copiedFiles += 1;
+                logProgress(input, copiedFiles, numberOfFilesToCopy);
+            }
+        });
+
+        await Promise.all(copyFilePromises);
+        console.log("All files copied!");
+    } else {
+        console.log("No files remaining to copy.");
     }
 
-    if (cleanDirectory)
-        cleanOutputDirectory(
+    if (cleanDirectory) {
+        await cleanOutputDirectory(
             inputFilesSet,
             filteredOutputFiles,
             outputDirectory
         );
+    }
 
     if (cleanEmpty) await cleanEmptyFoldersRecursively(outputDirectory);
 
     console.log("\nDone.");
 }
 
-function cleanOutputDirectory(inputFilesSet, outputFiles, outputDirectory) {
+async function cleanOutputDirectory(
+    inputFilesSet,
+    outputFiles,
+    outputDirectory
+) {
     console.log("\nCleaning output directory...");
 
     for (const filePath of outputFiles) {
@@ -134,20 +163,20 @@ function cleanOutputDirectory(inputFilesSet, outputFiles, outputDirectory) {
                     filePath
                 )}' no longer exists in input path. Deleting...`
             );
-            fs.unlinkSync(outputPath);
+            await fs.rm(outputPath);
         } catch (error) {
             console.error(`Error unlinking file '${filePath}':`, error);
         }
     }
 }
 
-function filesAreSame(filePathA, filePathB) {
+async function filesAreSame(filePathA, filePathB) {
     try {
-        if (!fs.existsSync(filePathB)) return false;
+        if (!existsSync(filePathB)) return false;
 
         const [statsA, statsB] = [
-            fs.statSync(filePathA),
-            fs.statSync(filePathB),
+            await fs.stat(filePathA),
+            await fs.stat(filePathB),
         ];
         const sizeIsSame = statsA.size === statsB.size;
         const mTimeIsSame = statsA.mtime === statsB.mtime;
@@ -156,6 +185,65 @@ function filesAreSame(filePathA, filePathB) {
     } catch {
         return false;
     }
+}
+
+// HELPERS
+
+function logProgressCurry(fileMax) {
+    const numberOfFilesString = String(fileMax);
+    const significantFigures = numberOfFilesString.length;
+    let initial = true;
+
+    const createProgressBar = createProgressBarCurry(20);
+
+    return (filename, fileCount) => {
+        const basename = path.basename(filename);
+        const fileCountString = String(fileCount).padStart(
+            significantFigures,
+            "0"
+        );
+        const percentage = fileCount / fileMax;
+        const progressBar = createProgressBar(percentage);
+        const percentageString = String(Math.floor(percentage * 100)).padStart(
+            3,
+            " "
+        );
+
+        const message = `Copying file ${fileCountString} of ${numberOfFilesString}\nCurrent file: ${basename}\nProgress: ${progressBar} ${percentageString}%\n`;
+        const messageRowCount = message.split("\n").length;
+
+        const { rows } = process.stdout;
+
+        if (initial) {
+            initial = false;
+            process.stdout.write(message);
+        }
+
+        for (let row = 1; row <= messageRowCount; row++) {
+            process.stdout.clearLine(0);
+            readline.cursorTo(process.stdout, 0, rows - row);
+        }
+
+        process.stdout.write(message);
+        if (fileCount === fileMax) {
+            console.log("Process complete");
+        }
+    };
+}
+
+function createProgressBarCurry(progressBarWidth = 20, inputOptions = {}) {
+    const defaultOptions = {
+        active: "\u2589",
+        inactive: "_",
+    };
+    const { active, inactive } = { ...inputOptions, ...defaultOptions };
+    return (percentage) => {
+        const numberOfProgressCharacters = Math.floor(
+            progressBarWidth * percentage
+        );
+        const activeProgress = active.repeat(numberOfProgressCharacters);
+        return `[${activeProgress.padEnd(progressBarWidth, inactive)}]`;
+    };
 }
 
 export { syncDirectories };
