@@ -1,6 +1,5 @@
 import path from "node:path";
 import readline from "node:readline";
-import { mapFilterAsync } from "../misc/map-filter.js";
 import { searchFilesRecursive } from "./search-files-recursive.js";
 import { cleanEmptyFoldersRecursively } from "./clean-empty-folders-recursive.js";
 import fs from "node:fs/promises";
@@ -86,23 +85,24 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     const inputFilesSet = new Set(filteredInputFiles);
     const outputFilesSet = new Set(filteredOutputFiles);
 
-    const filesToCopy = await mapFilterAsync(
-        filteredInputFiles,
-        async (filePath) => {
-            const inputPath = path.join(inputDirectory, filePath);
-            const outputPath = path.join(outputDirectory, filePath);
-            const existsInOutputPath = outputFilesSet.has(filePath);
-            const filesAreSame = await Promise.resolve(
-                compare(inputPath, outputPath)
-            );
-            const needsCopy = !existsInOutputPath && !filesAreSame;
-            if (!needsCopy) return null;
-            return {
-                input: inputPath,
-                output: outputPath,
-            };
-        }
+    const filesToCopyPromises = filteredInputFiles.map(async (filePath) => {
+        const inputPath = path.join(inputDirectory, filePath);
+        const outputPath = path.join(outputDirectory, filePath);
+        const existsInOutputPath = outputFilesSet.has(filePath);
+        const filesAreSame = await Promise.resolve(
+            compare(inputPath, outputPath)
+        );
+        const needsCopy = !existsInOutputPath && !filesAreSame;
+        if (!needsCopy) return null;
+        return {
+            input: inputPath,
+            output: outputPath,
+        };
+    });
+    const filesToCopy = (await Promise.all(filesToCopyPromises)).filter(
+        Boolean
     );
+
     const numberOfFilesToCopy = filesToCopy.length;
     if (numberOfFilesToCopy > 0) {
         const existingPaths = filteredInputFiles.length - numberOfFilesToCopy;
@@ -130,7 +130,7 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
         await Promise.all(copyFilePromises);
         console.log("All files copied!");
     } else {
-        console.log("No files remaining to copy.");
+        console.log("No files to copy.");
     }
 
     if (cleanDirectory) {
