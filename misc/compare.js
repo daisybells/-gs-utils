@@ -19,25 +19,19 @@ function areSame(inputA, inputB, inputOptions = {}) {
 }
 
 function areSameHandler(inputA, inputB, max_depth, depth = 0) {
-    if (depth > max_depth) {
-        throw new Error("Error: Max depth reached.");
-    }
-    if (typeof inputA !== typeof inputB) {
-        return false;
-    }
-    if (typeof inputA !== "object") {
-        return inputA === inputB;
-    }
-
-    const inputsAreArrays = areArrays(inputA, inputB);
+    const nextDepth = depth + 1;
 
     switch (true) {
-        case !inputsAreArrays:
-            return objectsAreSame(inputA, inputB, max_depth, depth + 1);
-        case inputsAreArrays:
-            return arraysAreSame(inputA, inputB, max_depth, depth + 1);
-        default:
+        case depth > max_depth:
+            throw new Error("Error: Max depth reached.");
+        case typeof inputA !== typeof inputB:
+            return false;
+        case !inputA || typeof inputA !== "object":
             return inputA === inputB;
+        case areArrays(inputA, inputB):
+            return arraysAreSame(inputA, inputB, max_depth, nextDepth);
+        default:
+            return objectsAreSame(inputA, inputB, max_depth, nextDepth);
     }
 }
 
@@ -60,9 +54,7 @@ function arraysAreSame(arrayA, arrayB, max_depth, depth) {
 
 function objectsAreSame(objectA, objectB, max_depth, depth) {
     if (typeof objectA !== "object" || typeof objectA !== "object") {
-        throw new Error(
-            `Error: inputs must be of type 'object'. Received '${typeof objectA}' and '${typeof objectB}'`
-        );
+        throw new Error(`Error: inputs must be of type 'object'.`);
     }
 
     if (Array.isArray(objectA) !== Array.isArray(objectB)) {
