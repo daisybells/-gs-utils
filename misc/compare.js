@@ -12,7 +12,7 @@ const defaultOptions = {
  * object search, defaults to 5.
  * @returns {Boolean} are same (true) or are different (false)
  */
-function objectsAreSame(inputA, inputB, inputOptions = {}) {
+function areSame(inputA, inputB, inputOptions = {}) {
     const options = { ...defaultOptions, ...inputOptions };
 
     return areSameHandler(inputA, inputB, options.max_depth);
@@ -92,4 +92,4 @@ function argumentsMatchCurry(callback) {
     };
 }
 
-export { objectsAreSame };
+export { areSame };
