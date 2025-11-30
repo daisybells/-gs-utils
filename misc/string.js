@@ -12,38 +12,40 @@
 function normalizeString(string, inputOptions) {
     const defaultOptions = {
         preserveSpaces: true,
-        collapseWhiteSpace: false,
+        collapseWhiteSpace: true,
         spaceCharacter: "-",
     };
-    const {
-        preserveSpaces,
-        collapseWhiteSpace: collapse,
-        spaceCharacter,
-    } = {
+    const { preserveSpaces, collapseWhiteSpace, spaceCharacter } = {
         ...defaultOptions,
         ...inputOptions,
     };
-    const spaceReplacement = preserveSpaces ? spaceCharacter : "";
-    const stringToEdit = collapse ? clearWhiteSpace(string) : string;
-    return stringToEdit
-        .trim()
-        .toLowerCase()
-        .replaceAll(/[^\w\d ]/gu, "")
-        .replaceAll(/ /gu, spaceReplacement);
+    const clearedSpaceCharacter = clearRegex(spaceCharacter);
+
+    const replacedString = string.replaceAll(
+        /[^\d\w]/gmu,
+        preserveSpaces ? spaceCharacter : ""
+    );
+
+    if (!collapseWhiteSpace || !preserveSpaces) return replacedString;
+
+    const collapseRegexString = `${clearedSpaceCharacter}{2,}`;
+    const collapseRegex = new RegExp(collapseRegexString, "gu");
+
+    return replacedString.replaceAll(collapseRegex, spaceCharacter);
 }
 
 function capitalizeWords(string) {
     return string.replaceAll(/\b\w(?!\s)/giu, (letter) => letter.toUpperCase());
 }
 
-function clearWhiteSpace(htmlString = "") {
+function clearWhiteSpace(string = "") {
     const specialWhiteSpaceCharacters = /[\t\n\v\f\r]+/gu;
-    const stringWithoutSpecialSpaces = htmlString.replaceAll(
+    const stringWithoutSpecialSpaces = string.replaceAll(
         specialWhiteSpaceCharacters,
         ""
     );
     const collapsedString = stringWithoutSpecialSpaces
-        .replaceAll(/  +/gu, " ")
+        .replaceAll(/  +/gmu, " ")
         .trim();
     return collapsedString;
 }
