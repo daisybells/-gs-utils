@@ -7,7 +7,7 @@ import fs from "node:fs";
 const defaultOptions = {
     filterInput: null,
     filterOutput: null,
-    compare: compareFileStatSize,
+    compare: filesAreSame,
     cleanDirectory: true,
     cleanEmpty: true,
 };
@@ -46,7 +46,7 @@ const defaultOptions = {
  * input folder's files. Default null returns original array.
  * @param {pathFilter} [inputOptions.filterOutput = null] - Callback function that filters
  * output folder's files. Default null returns original array.
- * @param {compare} [inputOptions.compareFiles] - Callback function that determines
+ * @param {compare} [inputOptions.compare] - Callback function that determines
  * if files should be copied (true) or should be ignored (false).
  * Default compares {stat.size} and {stat.mtime}.
  * @param {Boolean} [inputOptions.cleanDirectory = true] - Determines whether to delete
@@ -141,8 +141,10 @@ function cleanOutputDirectory(inputFilesSet, outputFiles, outputDirectory) {
     }
 }
 
-function compareFileStatSize(filePathA, filePathB) {
+function filesAreSame(filePathA, filePathB) {
     try {
+        if (!fs.existsSync(filePathB)) return false;
+
         const [statsA, statsB] = [
             fs.statSync(filePathA),
             fs.statSync(filePathB),

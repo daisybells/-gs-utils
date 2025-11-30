@@ -12,7 +12,7 @@
         "./misc": "./misc/index.js"
     },
     "scripts": {
-        "debug": "./.debug/debug.js"
+        "debug": "node ./.debug/debug.js"
     },
     "repository": {
         "type": "git",
