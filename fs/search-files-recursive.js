@@ -3,20 +3,15 @@ import path from "node:path";
 import { mapFilter } from "../misc/object/map-filter.js";
 
 /**
- * A string representing a filesystem Path.
- * @typedef {string} PathLike
- */
-
-/**
  * Callback function that takes an input base path and filters it.
  * @callback fileFilter
- * @param {PathLike} - Base filepath without the full path appended.
+ * @param {import("node:fs").PathLike} - Base filepath without the full path appended.
  * @returns {Boolean}
  **/
 
 /**
  * Asynchronously return all filepaths within an input directory.
- * @param {PathLike} directory - Input directory to search
+ * @param {import("node:fs").PathLike} directory - Input directory to search
  * @param {Object} inputOptions - Configurable options for plugin.
  *
  * @param {Boolean} [inputOptions.fullPath = false] - Determines whether or not to

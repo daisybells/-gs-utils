@@ -1,21 +1,16 @@
 import path from "node:path";
 import { searchFilesRecursive } from "./search-files-recursive.js";
-import { cleanEmptyFolders } from "./clean-empty-folders-recursive.js";
+import { cleanEmptyFolders } from "./clean-empty-folders.js";
 import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { logProgress } from "../misc/log-progress.js";
 import { createProgressBarGenerator } from "../misc/progress-bar.js";
 
 /**
- * A string representing a filesystem Path.
- * @typedef {string} PathLike
- */
-
-/**
  * Callback function that filters out certain files from an array of files.
  *
  * @callback pathFilter
- * @param {PathLike} filePath - Input file path from the filter.
+ * @param {import("node:fs").PathLike} filePath - Input file path from the filter.
  * @returns {Boolean} - Determines whether file should be included or excluded in array.
  */
 
@@ -23,8 +18,8 @@ import { createProgressBarGenerator } from "../misc/progress-bar.js";
  * Callback function that determines if two files are equal or not.
  *
  * @callback compare
- * @param {PathLike} filePathA - First file path to be compared.
- * @param {PathLike} filePathB - Second file path to be compared.
+ * @param {import("node:fs").PathLike} filePathA - First file path to be compared.
+ * @param {import("node:fs").PathLike} filePathB - Second file path to be compared.
  * @returns {Boolean} - Returns (true) if file stats are the same, returns (false)
  * if file stats are different.
  */
@@ -32,8 +27,8 @@ import { createProgressBarGenerator } from "../misc/progress-bar.js";
 /**
  * Asynchronously sync an output directory with a given input directory
  *
- * @param {PathLike} inputDirectory - Directory to copy files from.
- * @param {PathLike} outputDirectory - Directory to copy files into
+ * @param {import("node:fs").PathLike} inputDirectory - Directory to copy files from.
+ * @param {import("node:fs").PathLike} outputDirectory - Directory to copy files into
  * @param {object} [inputOptions] - Configurable settings for the function.
  *
  * @param {pathFilter} [inputOptions.filterInput = null] - Callback function that filters
