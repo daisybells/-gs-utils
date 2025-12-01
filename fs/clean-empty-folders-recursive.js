@@ -1,39 +1,44 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { mapFilter } from "../misc/object/map-filter.js";
 
-async function cleanEmptyFoldersRecursively(folder) {
-    const isDirectory = (await fs.stat(folder)).isDirectory();
-    if (!isDirectory) return;
+const HIDDEN_FILES_SET = new Set([".DS_Store", "Desktop.ini"]);
 
-    let files = await fs.readdir(folder);
+async function cleanEmptyFolders(directory, inputOptions = {}) {
+    return await cleanEmptyFoldersHandler(directory, inputOptions);
+}
+async function cleanEmptyFoldersHandler(directory, inputOptions = {}) {
+    const defaultOptions = {
+        includeHiddenFiles: false,
+    };
+    const options = { ...defaultOptions, ...inputOptions };
 
-    if (files.length > 0) {
-        for (const file of files) {
-            const fullPath = path.join(folder, file);
-            // eslint-disable-next-line no-await-in-loop
-            await cleanEmptyFoldersRecursively(fullPath);
-        }
+    const { includeDsStore } = options;
 
-        // re-evaluate files; after deleting subfolder
-        // we may have parent folder empty now
-        files = (await fs.readdir(folder)).filter(
-            (file) => file !== ".DS_Store"
-        );
+    const entries = await fs.readdir(directory, { withFileTypes: true });
+    const workingEntries = includeDsStore
+        ? entries.filter((file) => HIDDEN_FILES_SET.has(file.name))
+        : entries;
+
+    const removePromises = workingEntries.map(async (file) => {
+        const fullPath = path.join(directory, file.name);
+        if (!file.isDirectory()) return file;
+
+        await cleanEmptyFoldersHandler(fullPath, options);
+        return null;
+    });
+    const removedFiles = (await Promise.all(removePromises)).filter(Boolean);
+    if (removedFiles.length > 0) {
+        return;
     }
 
-    if (files.length === 0) {
-        const hasDsStore = (await fs.readdir(folder)).some(
-            (file) => file === ".DS_Store"
-        );
-        console.log(`rmdir: '${folder}'`);
-        if (hasDsStore) await fs.rm(path.join(folder, ".DS_Store"));
-        try {
-            await fs.rmdir(folder);
-        } catch (error) {
-            if (error.code !== "ENOENT") throw new Error(error);
-            console.warn(`Warning: Folder path '${folder}' does not exist`);
-        }
-    }
+    await Promise.all(
+        entries.map(async (file) => {
+            const fullPath = path.join(directory, file.name);
+            await fs.rm(fullPath);
+        })
+    );
+    await fs.rmdir(directory);
 }
 
-export { cleanEmptyFoldersRecursively };
+export { cleanEmptyFolders };

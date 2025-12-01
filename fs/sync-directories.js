@@ -1,18 +1,10 @@
 import path from "node:path";
-import readline from "node:readline";
 import { searchFilesRecursive } from "./search-files-recursive.js";
-import { cleanEmptyFoldersRecursively } from "./clean-empty-folders-recursive.js";
+import { cleanEmptyFolders } from "./clean-empty-folders-recursive.js";
 import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
-
-const defaultOptions = {
-    filterInput: null,
-    filterOutput: null,
-    compare: filesAreSame,
-    cleanDirectory: true,
-    cleanEmpty: true,
-    logProgress: true,
-};
+import { logProgress } from "../misc/log-progress.js";
+import { createProgressBarGenerator } from "../misc/progress-bar.js";
 
 /**
  * A string representing a filesystem Path.
@@ -50,12 +42,28 @@ const defaultOptions = {
  * output folder's files. Default null returns original array.
  * @param {compare} [inputOptions.compare] - Callback function that determines
  * if files should be copied (true) or should be ignored (false).
- * Default compares {stat.size} and {stat.mtime}.
+ * Default compares {stat.size}.
+ *
  * @param {Boolean} [inputOptions.cleanDirectory = true] - Determines whether to delete
- * loose files or keep them. Set to true by default.
+ * loose files (true) or keep them (false).
+ * @param {Boolean} [inputOptions.cleanEmpty = true] - Determines whether to delete empty
+ * directories (true) or keep them (false).
+ * @param {Boolean} [inputOptions.logProgress = true] - Determines whether to console log
+ * copy progress (true) or not (false).
+ * @returns {Promise<void>}
+ *
  */
 
 async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
+    const defaultOptions = {
+        filterInput: null,
+        filterOutput: null,
+        compare: filesAreSame,
+        cleanDirectory: true,
+        cleanEmpty: true,
+        logProgress: true,
+    };
+
     console.log("Starting directory sync...\n");
     console.log(`Source: ${inputDirectory}`);
     console.log(`Destination: ${outputDirectory}`);
@@ -70,22 +78,17 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
         logProgress: doLogProgress,
     } = options;
 
-    const inputFiles = await searchFilesRecursive(inputDirectory);
-    const outputFiles = await searchFilesRecursive(outputDirectory);
+    const inputFiles = await searchFilesRecursive(inputDirectory, {
+        filter: filterInput,
+    });
+    const outputFiles = await searchFilesRecursive(outputDirectory, {
+        filter: filterOutput,
+    });
 
-    const filteredInputFiles =
-        typeof filterInput === "function"
-            ? inputFiles.filter(filterInput)
-            : inputFiles;
-    const filteredOutputFiles =
-        typeof filterOutput === "function"
-            ? outputFiles.filter(filterOutput)
-            : outputFiles;
+    const inputFilesSet = new Set(inputFiles);
+    const outputFilesSet = new Set(outputFiles);
 
-    const inputFilesSet = new Set(filteredInputFiles);
-    const outputFilesSet = new Set(filteredOutputFiles);
-
-    const filesToCopyPromises = filteredInputFiles.map(async (filePath) => {
+    const filesToCopyPromises = inputFiles.map(async (filePath) => {
         const inputPath = path.join(inputDirectory, filePath);
         const outputPath = path.join(outputDirectory, filePath);
         const existsInOutputPath = outputFilesSet.has(filePath);
@@ -111,48 +114,50 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     const filesToCopy = (await Promise.all(filesToCopyPromises)).filter(
         Boolean
     );
+    const copyFilesSize = filesToCopy.length;
 
-    if (numberOfFilesToCopy > 0) {
-        const inputFileSize = filteredInputFiles.length;
-        await copyAllFiles(inputFileSize, doLogProgress)(filesToCopy);
+    if (filesToCopy.length > 0) {
+        const inputFileSize = inputFiles.length;
+        const existingPaths = inputFileSize - copyFilesSize;
+        console.log(
+            `${existingPaths} files exist in output directory. Copying the remaining ${copyFilesSize} files...`
+        );
+        await copyAllFiles(doLogProgress)(filesToCopy);
         console.log("All files copied!");
     } else {
         console.log("No files to copy.");
     }
 
     if (cleanDirectory) {
-        console.log("\nCleaning output directory...");
-        let removedFiles = 0;
-        const removeFilesPromises = filteredOutputFiles.map(
-            async (filepath) => {
-                if (inputFilesSet.has(filepath)) return;
-                await fs.rm(filepath);
-                removedFiles++;
-                return filepath;
-            }
-        );
-        await Promise.all(removeFilesPromises);
-        console.log(`Removed ${removedFiles} files.`);
+        console.log("Cleaning output directory...");
+        await deleteRemainingFiles(inputFilesSet, outputDirectory)(outputFiles);
     }
 
     if (cleanEmpty) {
-        console.log("\nCleaning empty folders...");
-        await cleanEmptyFoldersRecursively(outputDirectory);
+        console.log("Cleaning empty folders...");
+        await cleanEmptyFolders(outputDirectory);
     }
 
     console.log("\nDone.");
 }
 
-function copyAllFiles(inputFileSize, doLogProgress) {
-    return async (filesToCopy) => {
-        const copyFilesSize = filesToCopy.length;
-        const existingPaths = inputFileSize - copyFilesSize;
-        console.log(
-            `${existingPaths} files already exist in output directory. Copying the remaining ${copyFilesSize} files...`
-        );
-        let copiedFiles = 0;
-        const logProgress = logProgressCurry(copyFilesSize);
+function deleteRemainingFiles(inputFilesSet, outputDirectory) {
+    let removedFiles = 0;
+    return async (outputFiles) => {
+        const removeFilesPromises = outputFiles.map(async (filepath) => {
+            if (inputFilesSet.has(filepath)) return;
+            const fullPath = path.join(outputDirectory, filepath);
+            await fs.rm(fullPath);
+            removedFiles++;
+        });
+        const output = await Promise.all(removeFilesPromises);
+        console.log(`Removed ${removedFiles} files.`);
+        return output;
+    };
+}
 
+function copyAllFiles(doLogProgress) {
+    return async (filesToCopy) => {
         const copyFilePromises = filesToCopy.map(async (file) => {
             const { input, output } = file;
 
@@ -161,15 +166,20 @@ function copyAllFiles(inputFileSize, doLogProgress) {
             if (!existsSync(outputDirname)) {
                 await fs.mkdir(outputDirname, { recursive: true });
             }
-            await fs.copyFile(input, output);
 
-            if (doLogProgress) {
-                copiedFiles += 1;
-                logProgress(input, copiedFiles, numberOfFilesToCopy);
-            }
+            await fs.copyFile(input, output);
+            return path.basename(input);
         });
 
-        await Promise.all(copyFilePromises);
+        if (doLogProgress) {
+            const createProgressBar = createProgressBarGenerator();
+            await logProgress(
+                copyFilePromises,
+                createLogMessage(createProgressBar)
+            );
+        } else {
+            await Promise.all(copyFilePromises);
+        }
     };
 }
 
@@ -182,70 +192,18 @@ async function filesAreSame(filePathA, filePathB) {
             await fs.stat(filePathB),
         ];
         const sizeIsSame = statsA.size === statsB.size;
-        const mTimeIsSame = statsA.mtime === statsB.mtime;
-
-        return sizeIsSame && mTimeIsSame;
+        return sizeIsSame;
     } catch {
         return false;
     }
 }
 
-// HELPERS
-
-function logProgressCurry(fileMax) {
-    const numberOfFilesString = String(fileMax);
-    const significantFigures = numberOfFilesString.length;
-    let initial = true;
-
-    const createProgressBar = createProgressBarCurry(20);
-
-    return (filename, fileCount) => {
-        const basename = path.basename(filename);
-        const fileCountString = String(fileCount).padStart(
-            significantFigures,
-            "0"
-        );
-        const percentage = fileCount / fileMax;
-        const progressBar = createProgressBar(percentage);
-        const percentageString = String(Math.floor(percentage * 100)).padStart(
-            3,
-            " "
-        );
-
-        const message = `Copying file ${fileCountString} of ${numberOfFilesString}\nCurrent file: ${basename}\nProgress: ${progressBar} ${percentageString}%\n`;
-        const messageRowCount = message.split("\n").length;
-
-        const { rows } = process.stdout;
-
-        if (initial) {
-            initial = false;
-            process.stdout.write(message);
-        }
-
-        for (let row = 1; row <= messageRowCount; row++) {
-            process.stdout.clearLine(0);
-            readline.cursorTo(process.stdout, 0, rows - row);
-        }
-
-        process.stdout.write(message);
-        if (fileCount === fileMax) {
-            console.log("Process complete");
-        }
-    };
-}
-
-function createProgressBarCurry(progressBarWidth = 20, inputOptions = {}) {
-    const defaultOptions = {
-        active: "\u2589",
-        inactive: "_",
-    };
-    const { active, inactive } = { ...inputOptions, ...defaultOptions };
-    return (percentage) => {
-        const numberOfProgressCharacters = Math.floor(
-            progressBarWidth * percentage
-        );
-        const activeProgress = active.repeat(numberOfProgressCharacters);
-        return `[${activeProgress.padEnd(progressBarWidth, inactive)}]`;
+function createLogMessage(createProgressBar) {
+    return (currentFile, index, max) => {
+        const decimalPercentage = index / max;
+        const progressBar = createProgressBar(decimalPercentage);
+        const outputPercentage = Math.floor(decimalPercentage * 100);
+        return `Copying file ${index} of ${max}\nCurrent file: ${currentFile}\n${progressBar} ${outputPercentage}%`;
     };
 }
 

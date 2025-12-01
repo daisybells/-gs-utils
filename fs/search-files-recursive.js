@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { mapFilter } from "../misc/object/map-filter.js";
 
 /**
  * A string representing a filesystem Path.
@@ -8,7 +9,6 @@ import path from "node:path";
 
 /**
  * Callback function that takes an input base path and filters it.
- * (DOES NOT USE FULL PATH)
  * @callback fileFilter
  * @param {PathLike} - Base filepath without the full path appended.
  * @returns {Boolean}
@@ -21,18 +21,19 @@ import path from "node:path";
  *
  * @param {Boolean} [inputOptions.fullPath = false] - Determines whether or not to
  * return full filepath
- * @param {fileFilter} [inputOptions.filter] - function that determines how to filter
+ * @param {fileFilter} [inputOptions.filter] - Function that determines how to filter
  * files.
  * @param {Boolean} [inputOptions.includeDirectories = false] - Determines whether or not
  * to include directories in search
  * @param {Boolean} [inputOptions.asRoot = false] - Determines if the input directory
  * should be treated as a root directory.
  *
- * @param {PathLike} base - Dummy input that remains equal to original input directory
- * throughout recursive search.
  * @returns {Promise<Array>} - All files and paths within directory.
  */
-async function searchFilesRecursive(
+async function searchFilesRecursive(directory, inputOptions = {}) {
+    return await searchFilesRecursiveHandler(directory, inputOptions);
+}
+async function searchFilesRecursiveHandler(
     directory,
     inputOptions = {},
     base = directory
@@ -45,38 +46,48 @@ async function searchFilesRecursive(
     };
     const options = { ...defaultOptions, ...inputOptions };
 
-    const {
-        fullPath: fullPathBoolean,
-        asRoot,
-        filter,
-        includeDirectories,
-    } = options;
+    const { filter, includeDirectories } = options;
 
     const entries = await fs.readdir(directory, { withFileTypes: true });
-    const files = await Promise.all(
-        entries.map(async (entry) => {
-            const fullPath = path.join(directory, entry.name);
-            const relative = path.relative(base, fullPath);
-            if (!entry.isDirectory()) return relative;
-            const nextEntry = await searchFilesRecursive(
-                fullPath,
-                options,
-                base
-            );
+    const filePromises = entries.map(async (entry) => {
+        const fullPath = path.join(directory, entry.name);
+        const relativePath = path.relative(base, fullPath);
+        if (!entry.isDirectory()) return relativePath;
 
-            return includeDirectories ? [relative, ...nextEntry] : nextEntry;
-        })
-    );
-    const allFiles = files.flat();
-    const filteredFiles =
-        typeof options.filter === "function"
-            ? allFiles.filter(filter)
-            : allFiles;
-    if (fullPathBoolean)
-        return filteredFiles.map((filePath) => path.resolve(base, filePath));
+        const nextEntry = await searchFilesRecursiveHandler(
+            fullPath,
+            options,
+            base
+        );
 
-    if (asRoot)
-        return filteredFiles.map((filePath) => path.join("/", filePath));
-    return filteredFiles;
+        return includeDirectories ? [relativePath, ...nextEntry] : nextEntry;
+    });
+    const allFiles = (await Promise.all(filePromises)).flat();
+    return mapFilter(allFiles, (filePath) => {
+        const outputPath = makeFilePath(filePath, options, base);
+
+        if (!filter || typeof filter !== "function") {
+            return outputPath;
+        }
+        const isIncluded = filter(outputPath);
+
+        if (!isIncluded) return null;
+
+        return outputPath;
+    });
 }
+
+function makeFilePath(filePath, options, base = "") {
+    const { asRoot, fullPath } = options;
+
+    switch (true) {
+        case fullPath:
+            return path.resolve(base, filePath);
+        case asRoot:
+            return path.join("/", filePath);
+        default:
+            return filePath;
+    }
+}
+
 export { searchFilesRecursive };

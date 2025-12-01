@@ -34,25 +34,8 @@ function normalizeString(string, inputOptions) {
     return replacedString.replaceAll(collapseRegex, spaceCharacter);
 }
 
-function capitalizeWords(string) {
-    return string.replaceAll(/\b\w(?!\s)/giu, (letter) => letter.toUpperCase());
-}
-
-function clearWhiteSpace(string = "") {
-    const specialWhiteSpaceCharacters = /[\t\n\v\f\r]+/gu;
-    const stringWithoutSpecialSpaces = string.replaceAll(
-        specialWhiteSpaceCharacters,
-        ""
-    );
-    const collapsedString = stringWithoutSpecialSpaces
-        .replaceAll(/  +/gmu, " ")
-        .trim();
-    return collapsedString;
-}
-
 function clearRegex(string) {
     return string.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-export { normalizeString, capitalizeWords, clearWhiteSpace, clearRegex };
-export { latinize } from "./latinize.js";
+export { normalizeString, clearRegex };

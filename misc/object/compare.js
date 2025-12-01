@@ -1,7 +1,4 @@
 const areArrays = argumentsMatchCurry((element) => Array.isArray(element));
-const defaultOptions = {
-    max_depth: 5,
-};
 
 /**
  * Deep comparison function between any two arrays or objects.
@@ -12,13 +9,16 @@ const defaultOptions = {
  * object search, defaults to 5.
  * @returns {Boolean} are same (true) or are different (false)
  */
-function areSame(inputA, inputB, inputOptions = {}) {
+function eqeqeq(inputA, inputB, inputOptions = {}) {
+    const defaultOptions = {
+        max_depth: 5,
+    };
     const options = { ...defaultOptions, ...inputOptions };
 
-    return areSameHandler(inputA, inputB, options.max_depth);
+    return eqeqeqHandler(inputA, inputB, options.max_depth);
 }
 
-function areSameHandler(inputA, inputB, max_depth, depth = 0) {
+function eqeqeqHandler(inputA, inputB, max_depth, depth = 0) {
     const nextDepth = depth + 1;
 
     switch (true) {
@@ -29,13 +29,13 @@ function areSameHandler(inputA, inputB, max_depth, depth = 0) {
         case !inputA || typeof inputA !== "object":
             return inputA === inputB;
         case areArrays(inputA, inputB):
-            return arraysAreSame(inputA, inputB, max_depth, nextDepth);
+            return arraysEqual(inputA, inputB, max_depth, nextDepth);
         default:
-            return objectsAreSame(inputA, inputB, max_depth, nextDepth);
+            return objectsEqual(inputA, inputB, max_depth, nextDepth);
     }
 }
 
-function arraysAreSame(arrayA, arrayB, max_depth, depth) {
+function arraysEqual(arrayA, arrayB, max_depth, depth) {
     if (!areArrays(arrayA, arrayB)) {
         throw new Error(`Error: inputs must both be arrays.`);
     }
@@ -47,12 +47,12 @@ function arraysAreSame(arrayA, arrayB, max_depth, depth) {
     return (
         aSorted.findIndex(
             (value, index) =>
-                !areSameHandler(value, bSorted[index], max_depth, depth)
+                !eqeqeqHandler(value, bSorted[index], max_depth, depth)
         ) === -1
     );
 }
 
-function objectsAreSame(objectA, objectB, max_depth, depth) {
+function objectsEqual(objectA, objectB, max_depth, depth) {
     if (typeof objectA !== "object" || typeof objectA !== "object") {
         throw new Error(`Error: inputs must be of type 'object'.`);
     }
@@ -70,7 +70,7 @@ function objectsAreSame(objectA, objectB, max_depth, depth) {
     const objectsAreSame =
         entriesA.findIndex(
             ([key, value]) =>
-                !areSameHandler(value, objectB[key], max_depth, depth)
+                !eqeqeqHandler(value, objectB[key], max_depth, depth)
         ) === -1;
     return objectsAreSame;
 }
@@ -84,4 +84,4 @@ function argumentsMatchCurry(callback) {
     };
 }
 
-export { areSame };
+export { eqeqeq };
