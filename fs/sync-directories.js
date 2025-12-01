@@ -89,17 +89,23 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
         const inputPath = path.join(inputDirectory, filePath);
         const outputPath = path.join(outputDirectory, filePath);
         const existsInOutputPath = outputFilesSet.has(filePath);
-        if (!existsInOutputPath) return null;
+
+        const outputData = {
+            input: inputPath,
+            output: outputPath,
+        };
+
+        if (!existsInOutputPath) {
+            return outputData;
+        }
 
         const filesAreSame = await Promise.resolve(
             compare(inputPath, outputPath)
         );
 
-        if (filesAreSame) return null;
-        return {
-            input: inputPath,
-            output: outputPath,
-        };
+        if (!filesAreSame) return outputData;
+
+        return null;
     });
     const filesToCopy = (await Promise.all(filesToCopyPromises)).filter(
         Boolean
@@ -116,6 +122,7 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
 
         const copyFilePromises = filesToCopy.map(async (file) => {
             const { input, output } = file;
+
             const outputDirname = path.dirname(output);
 
             if (!existsSync(outputDirname)) {
@@ -150,12 +157,12 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
 
 async function cleanOutputDirectory(
     inputFilesSet,
-    outputFiles,
+    filteredOutputFiles,
     outputDirectory
 ) {
     console.log("\nCleaning output directory...");
 
-    for (const filePath of outputFiles) {
+    for (const filePath of filteredOutputFiles) {
         if (inputFilesSet.has(filePath)) continue;
         const outputPath = path.resolve(outputDirectory, filePath);
 
