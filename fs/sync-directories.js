@@ -107,6 +107,7 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
 
         return null;
     });
+
     const filesToCopy = (await Promise.all(filesToCopyPromises)).filter(
         Boolean
     );
@@ -143,40 +144,23 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     }
 
     if (cleanDirectory) {
-        await cleanOutputDirectory(
-            inputFilesSet,
-            filteredOutputFiles,
-            outputDirectory
+        console.log("\nCleaning output directory...");
+        let removedFiles = 0;
+        const removeFilesPromises = filteredOutputFiles.map(
+            async (filepath) => {
+                if (inputFilesSet.has(filepath)) return;
+                await fs.rm(filepath);
+                removedFiles++;
+                return filepath;
+            }
         );
+        await Promise.all(removeFilesPromises);
+        console.log(`Removed ${removedFiles} files.`);
     }
 
     if (cleanEmpty) await cleanEmptyFoldersRecursively(outputDirectory);
 
     console.log("\nDone.");
-}
-
-async function cleanOutputDirectory(
-    inputFilesSet,
-    filteredOutputFiles,
-    outputDirectory
-) {
-    console.log("\nCleaning output directory...");
-
-    for (const filePath of filteredOutputFiles) {
-        if (inputFilesSet.has(filePath)) continue;
-        const outputPath = path.resolve(outputDirectory, filePath);
-
-        try {
-            console.log(
-                `File '${path.basename(
-                    filePath
-                )}' no longer exists in input path. Deleting...`
-            );
-            await fs.rm(outputPath);
-        } catch (error) {
-            console.error(`Error unlinking file '${filePath}':`, error);
-        }
-    }
 }
 
 async function filesAreSame(filePathA, filePathB) {

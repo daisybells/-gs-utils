@@ -25,7 +25,7 @@ async function cleanEmptyFoldersRecursively(folder) {
         const hasDsStore = (await fs.readdir(folder)).some(
             (file) => file === ".DS_Store"
         );
-        console.log(`removing: '${folder}'`);
+        console.log(`rmdir: '${folder}'`);
         if (hasDsStore) await fs.rm(path.join(folder, ".DS_Store"));
         try {
             await fs.rmdir(folder);
