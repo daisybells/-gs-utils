@@ -89,11 +89,13 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
         const inputPath = path.join(inputDirectory, filePath);
         const outputPath = path.join(outputDirectory, filePath);
         const existsInOutputPath = outputFilesSet.has(filePath);
+        if (!existsInOutputPath) return null;
+
         const filesAreSame = await Promise.resolve(
             compare(inputPath, outputPath)
         );
-        const needsCopy = !existsInOutputPath && !filesAreSame;
-        if (!needsCopy) return null;
+
+        if (filesAreSame) return null;
         return {
             input: inputPath,
             output: outputPath,
