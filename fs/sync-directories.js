@@ -112,32 +112,9 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
         Boolean
     );
 
-    const numberOfFilesToCopy = filesToCopy.length;
     if (numberOfFilesToCopy > 0) {
-        const existingPaths = filteredInputFiles.length - numberOfFilesToCopy;
-        console.log(
-            `${existingPaths} files already exist in output directory. Copying the remaining ${numberOfFilesToCopy} files...`
-        );
-        let copiedFiles = 0;
-        const logProgress = logProgressCurry(numberOfFilesToCopy);
-
-        const copyFilePromises = filesToCopy.map(async (file) => {
-            const { input, output } = file;
-
-            const outputDirname = path.dirname(output);
-
-            if (!existsSync(outputDirname)) {
-                await fs.mkdir(outputDirname, { recursive: true });
-            }
-            await fs.copyFile(input, output);
-
-            if (doLogProgress) {
-                copiedFiles += 1;
-                logProgress(input, copiedFiles, numberOfFilesToCopy);
-            }
-        });
-
-        await Promise.all(copyFilePromises);
+        const inputFileSize = filteredInputFiles.length;
+        await copyAllFiles(inputFileSize, doLogProgress)(filesToCopy);
         console.log("All files copied!");
     } else {
         console.log("No files to copy.");
@@ -158,9 +135,42 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
         console.log(`Removed ${removedFiles} files.`);
     }
 
-    if (cleanEmpty) await cleanEmptyFoldersRecursively(outputDirectory);
+    if (cleanEmpty) {
+        console.log("\nCleaning empty folders...");
+        await cleanEmptyFoldersRecursively(outputDirectory);
+    }
 
     console.log("\nDone.");
+}
+
+function copyAllFiles(inputFileSize, doLogProgress) {
+    return async (filesToCopy) => {
+        const copyFilesSize = filesToCopy.length;
+        const existingPaths = inputFileSize - copyFilesSize;
+        console.log(
+            `${existingPaths} files already exist in output directory. Copying the remaining ${copyFilesSize} files...`
+        );
+        let copiedFiles = 0;
+        const logProgress = logProgressCurry(copyFilesSize);
+
+        const copyFilePromises = filesToCopy.map(async (file) => {
+            const { input, output } = file;
+
+            const outputDirname = path.dirname(output);
+
+            if (!existsSync(outputDirname)) {
+                await fs.mkdir(outputDirname, { recursive: true });
+            }
+            await fs.copyFile(input, output);
+
+            if (doLogProgress) {
+                copiedFiles += 1;
+                logProgress(input, copiedFiles, numberOfFilesToCopy);
+            }
+        });
+
+        await Promise.all(copyFilePromises);
+    };
 }
 
 async function filesAreSame(filePathA, filePathB) {
