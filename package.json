@@ -9,8 +9,9 @@
         ".": "./index.js",
         "./fs": "./fs/index.js",
         "./misc": "./misc/index.js",
-        "./object": "./misc/object/index.js",
-        "./string": "./misc/string/index.js"
+        "./object": "./object/index.js",
+        "./string": "./string/index.js",
+        "./console": "./console/index.js"
     },
     "scripts": {
         "debug": "node ./.debug/debug.js"

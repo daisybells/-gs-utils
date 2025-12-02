@@ -3,8 +3,8 @@ import { searchFilesRecursive } from "./search-files-recursive.js";
 import { cleanEmptyFolders } from "./clean-empty-folders.js";
 import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { logProgress } from "../misc/log-progress.js";
-import { createProgressBarGenerator } from "../misc/progress-bar.js";
+import { logProgress } from "../console/log-progress.js";
+import { createProgressBarGenerator } from "../console/progress-bar.js";
 
 /**
  * Callback function that filters out certain files from an array of files.
@@ -83,6 +83,7 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     const inputFilesSet = new Set(inputFiles);
     const outputFilesSet = new Set(outputFiles);
 
+    console.log("Processing files to copy...");
     const filesToCopyPromises = inputFiles.map(async (filePath) => {
         const inputPath = path.join(inputDirectory, filePath);
         const outputPath = path.join(outputDirectory, filePath);
@@ -115,10 +116,10 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
         const inputFileSize = inputFiles.length;
         const existingPaths = inputFileSize - copyFilesSize;
         console.log(
-            `${existingPaths} files exist in output directory. Copying the remaining ${copyFilesSize} files...`
+            `${existingPaths} file(s) exist(s) in output directory. Copying the remaining ${copyFilesSize} file(s)...\n`
         );
         await copyAllFiles(doLogProgress)(filesToCopy);
-        console.log("All files copied!");
+        console.log("\nAll files copied!");
     } else {
         console.log("No files to copy.");
     }
@@ -130,7 +131,10 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
 
     if (cleanEmpty) {
         console.log("Cleaning empty folders...");
-        await cleanEmptyFolders(outputDirectory);
+        await cleanEmptyFolders(outputDirectory, {
+            filter: (filepath) =>
+                filterOutput(path.relative(outputDirectory, filepath)),
+        });
     }
 
     console.log("\nDone.");

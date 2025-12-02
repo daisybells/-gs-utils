@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { mapFilter } from "../misc/object/map-filter.js";
+import { mapFilter } from "../object/map-filter.js";
 
 /**
  * Callback function that takes an input base path and filters it.
