@@ -1,9 +1,18 @@
-function initializeColorFormat() {
+import { clearRegex } from "../string/normalize.js";
+
+function initializeColorFormatter() {
     const ESCAPE_CHARACTER = "\u001b";
     const SPLIT_CHARACTER = ",";
+    const IGNORE_CHARACTER = "^";
 
     const RESET = "0";
     const RESET_ESCAPE = addEscapeToCode(RESET);
+
+    const pointers = {
+        f: "color",
+        d: "decoration",
+        r: "reset",
+    };
 
     const colorCodes = {
         black: "0",
@@ -14,7 +23,6 @@ function initializeColorFormat() {
         magenta: "5",
         cyan: "6",
         white: "7",
-        reset: RESET,
     };
     const brightnessCodes = {
         bright: ";1",
@@ -25,7 +33,7 @@ function initializeColorFormat() {
         italic: "3",
         underline: "4",
         blink: "5",
-        reversed: "7",
+        reverse: "7",
         hidden: "8",
         strikethrough: "9",
     };
@@ -33,7 +41,19 @@ function initializeColorFormat() {
         text: "3",
         highlight: "4",
     };
-    const selectorRegex = /%(i){0,1}\(([a-z,]+?)\)([fd])/gu;
+
+    const pointerSelectors = Object.keys(pointers)
+        .sort((a, b) => b.length - a.length)
+        .map(clearRegex)
+        .join("|");
+
+    const specifiersGroup = `[a-z${clearRegex(SPLIT_CHARACTER)}]+?`;
+
+    const selectorRegexString = `(${clearRegex(
+        IGNORE_CHARACTER
+    )}){0,1}%(?:\\((${specifiersGroup})\\)){0,1}(${pointerSelectors})`;
+
+    const selectorRegex = new RegExp(selectorRegexString, "gu");
 
     return {
         apply: applyFormatting,
@@ -62,47 +82,50 @@ function initializeColorFormat() {
         return addEscapesToString(string, decorationCodes.join(""));
     }
 
-    function toColor(string, color, brightness, highlight) {
-        const escapeCodes = {
-            color: colorCodes[color] || RESET,
-            brightness: brightnessCodes[brightness] || "",
-            fgbg: fgbgCodes[highlight] || fgbgCodes["text"],
-        };
-        const escapeSequence = createEscapeSequence(escapeCodes);
+    function toColor(string, ..._arguments) {
+        const escapeCodes = extractEscapeCodes(_arguments);
+        const escapeSequence = createColorEscape(escapeCodes);
 
         return addEscapesToString(string, escapeSequence);
     }
 
     function clearString(string) {
-        return string.replaceAll(selectorRegex, (match, ignored) => {
-            const isIgnored = ignored === "i";
-            if (isIgnored) return match;
-            return `${match.charAt(0)}i${match.slice(1)}`;
+        return string.replaceAll(selectorRegex, (match) => {
+            return `${IGNORE_CHARACTER}${match}`;
         });
     }
     function applyFormatting(string) {
-        const coloredString = string.replaceAll(
-            selectorRegex,
-            (match, ignored, specifiers, type) => {
-                if (ignored === "i") return match.replace("i", "");
-                const specifiersArray = specifiers.split(SPLIT_CHARACTER);
-                if (type === "d") {
-                    const decorationCodes =
-                        extractDecorationCodes(specifiersArray);
-                    return decorationCodes.join("");
-                }
-
-                if (!specifiers) return match;
-                const escapeCodes = extractEscapeCodes(specifiersArray);
-                const { color } = escapeCodes;
-                if (!color) return match;
-                return createEscapeSequence(escapeCodes);
-            }
-        );
+        const coloredString = string.replaceAll(selectorRegex, transformString);
         return `${coloredString}${RESET_ESCAPE}`;
     }
+    function transformString(match, ignored, specifiers, pointer) {
+        const isIgnored = ignored === IGNORE_CHARACTER;
+        const hasSpecifiers =
+            typeof specifiers === "string" && specifiers.trim() !== "";
 
-    function createEscapeSequence(escapeCodes) {
+        if (isIgnored) return match.replace(IGNORE_CHARACTER, "");
+        const type = pointers[pointer];
+
+        const specifiersArray = hasSpecifiers
+            ? specifiers.split(SPLIT_CHARACTER)
+            : [];
+
+        switch (type) {
+            case "reset": {
+                return RESET_ESCAPE;
+            }
+            case "decoration": {
+                const decorationCodes = extractDecorationCodes(specifiersArray);
+                return decorationCodes.join("");
+            }
+            case "color": {
+                const escapeCodes = extractEscapeCodes(specifiersArray);
+                return createColorEscape(escapeCodes);
+            }
+        }
+    }
+
+    function createColorEscape(escapeCodes) {
         const { color, brightness, fgbg } = escapeCodes;
         if (!color) return "";
         const escapeSequence = `${fgbg}${color}${brightness}`;
@@ -111,7 +134,6 @@ function initializeColorFormat() {
 
     function extractDecorationCodes(specifiersArray) {
         return specifiersArray.reduce((accumulator, specifier) => {
-            console.log(specifier);
             const decorationCode = decorationCodes[specifier];
             if (!decorationCode) return accumulator;
             return [...accumulator, addEscapeToCode(decorationCode)];
@@ -165,4 +187,4 @@ function initializeColorFormat() {
     }
 }
 
-export { initializeColorFormat };
+export { initializeColorFormatter };

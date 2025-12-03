@@ -1,4 +1,4 @@
-import { initializeColorFormat } from "./console-format.js";
+import { initializeColorFormatter } from "./console-format.js";
 
 function createSelectorInterface(processIO = {}, listItems) {
     const { input, output } = processIO;
@@ -49,6 +49,35 @@ function enableSelector(processIO, prompt, listItems, options) {
         );
         pointerTo(pointerPosition.page, pointerPosition.index);
 
+        const closeReadline = () => {
+            console.log("\nCancelling readline...");
+            input.pause();
+            resolve(null);
+        };
+
+        const keyDirectionMap = {
+            65: {
+                name: "up",
+                direction: -1,
+                isVertical: true,
+            },
+            66: {
+                name: "down",
+                direction: 1,
+                isVertical: true,
+            },
+            68: {
+                name: "left",
+                direction: -1,
+                isVertical: false,
+            },
+            67: {
+                name: "right",
+                direction: 1,
+                isVertical: false,
+            },
+        };
+
         input.on("data", (key) => {
             if (key === "\u0003") {
                 console.log("Termination signal received. Exiting process...");
@@ -82,13 +111,21 @@ function enableSelector(processIO, prompt, listItems, options) {
                     });
                     break;
                 }
-                case key.charCodeAt(0) === 127 || key.charCodeAt(0) === 27: {
-                    console.log("\nCancelling readline...");
-                    input.pause();
-                    resolve(null);
+                case key.charCodeAt(0) === 127: {
+                    closeReadline();
                     break;
                 }
+                case key.charCodeAt(0) === 27: {
+                    const arrowKey = keyDirectionMap[String(key.charCodeAt(2))];
+                    if (!arrowKey) {
+                        closeReadline();
+                        return;
+                    }
+                    const { direction, isVertical } = arrowKey;
+                    movePointer(direction, isVertical);
+                }
             }
+
             output.moveCursor(-1, 0);
         });
     };
@@ -101,7 +138,8 @@ function createReadlineSelectorMethods(
     inputOptions,
     pointerPosition
 ) {
-    const formatter = initializeColorFormat();
+    let lastWrittenLineCount = 0;
+    const formatter = initializeColorFormatter();
     const { output } = processIO;
 
     const { maxPerPage, navigationHint } = inputOptions;
@@ -114,21 +152,25 @@ function createReadlineSelectorMethods(
     };
 
     const padPage = (pageItems, currentPage) => {
-        return Array.from(Array(maxPerPage).keys(), (index) => ({
-            label: pageItems[index],
-            number: index + currentPage * maxPerPage,
-        }));
+        return Array.from(Array(maxPerPage).keys(), (index) => {
+            const exists = index < pageItems.length;
+            return {
+                exists,
+                label: pageItems[index],
+                number: index + currentPage * maxPerPage,
+            };
+        });
     };
 
     const makeListItemDisplay = (listItem, index) => {
-        const { label, number } = listItem;
-        if (!label) return "";
+        const { label, number, exists } = listItem;
+        if (!exists) return "";
         const isHighlighted = index === pointerPosition.index;
         const visualIndexPadded = String(number).padEnd(2, " ");
         const outputString = `${visualIndexPadded}. ${label}`;
         if (!isHighlighted) return outputString;
         const clearedOutput = formatter.clear(outputString);
-        const highlightIndicator = "%(cyan,bright)f%(bold,italic)d";
+        const highlightIndicator = "%(cyan,bright)f%(bold,italic,underline)d";
         return formatter.apply(`${highlightIndicator}${clearedOutput}`);
     };
 
@@ -155,8 +197,12 @@ function createReadlineSelectorMethods(
     };
 
     const writeToOutput = (pageContents) => {
-        output.cursorTo(0, 0);
+        if (lastWrittenLineCount > 0) {
+            output.moveCursor(0, -lastWrittenLineCount);
+        }
+        lastWrittenLineCount = (pageContents.match(/\n/gu) || []).length;
         output.clearScreenDown();
+        output.clearLine();
         output.write(pageContents);
     };
 
@@ -201,10 +247,6 @@ function createReadlineSelectorMethods(
 
 function carouselValue(value, direction, max) {
     return (value + direction + max) % max;
-}
-
-function createPageContents(question, body, pageNumberDisplay, hint) {
-    return `${question}\n${body}\n${pageNumberDisplay}\n${hint}\n`;
 }
 
 export { createSelectorInterface };

@@ -1,5 +1,5 @@
 import readline from "node:readline";
-import { createFormatSpecifiers } from "../string/c-format.js";
+import { initializeCFormatter } from "../string/c-format.js";
 
 /**
  *
@@ -84,13 +84,13 @@ function generateMessageCurry(input) {
     if (typeof input === "function") return input;
 
     return (currentValue, index, max) => {
-        const format = createFormatSpecifiers({
+        const formatter = initializeCFormatter({
             i: index,
             m: max,
             p: (index / max) * 100,
             c: currentValue,
         });
-        return format(input);
+        return formatter.apply(input);
     };
 }
 

@@ -1,23 +1,33 @@
 import { clearRegex } from "./normalize.js";
 
-function createFormatSpecifiers(dataMap) {
-    const FORMAT_SPECIFIER_REGEX =
-        "%([^\\.]{0,1}\\d+?){0,1}(?:\\.(\\d+?)){0,1}";
+function initializeCFormatter(dataMap) {
+    const PAD_START_REGEX = "[^\\.]{0,1}\\d+?";
+    const TO_FIXED_REGEX = "\\.(\\d+?";
+    const FORMAT_SPECIFIER_REGEX = `%(${PAD_START_REGEX}){0,1}(?:${TO_FIXED_REGEX})){0,1}`;
     const clearedDataMap = {
         ...dataMap,
         "%": "%",
     };
-    const dataMapCharacters = Object.keys(clearedDataMap).join("");
+    const dataMapStrings = Object.keys(clearedDataMap)
+        .sort((a, b) => b.length - a.length)
+        .map(clearRegex)
+        .join("|");
     const regex = new RegExp(
-        `${FORMAT_SPECIFIER_REGEX}([${clearRegex(dataMapCharacters)}])`,
+        `${FORMAT_SPECIFIER_REGEX}(${dataMapStrings})`,
         "gu"
     );
-    return (input) => {
-        return input.replaceAll(regex, (match, minLength, order, dataType) => {
-            const output = clearedDataMap[dataType];
-            if (match.length === 2) return output;
-            return formatNumber(output, minLength, order);
-        });
+    console.log(regex);
+    return {
+        apply: (input) => {
+            return input.replaceAll(
+                regex,
+                (match, minLength, order, dataType) => {
+                    const output = clearedDataMap[dataType];
+                    if (match.length === 2) return output;
+                    return formatNumber(output, minLength, order);
+                }
+            );
+        },
     };
 }
 function formatNumber(inputNumber, minLength, order) {
@@ -43,4 +53,4 @@ function formatOrder(inputNumber, orderString) {
     return String(inputNumber.toFixed(order));
 }
 
-export { createFormatSpecifiers };
+export { initializeCFormatter };
