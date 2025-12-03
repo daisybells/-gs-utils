@@ -1,5 +1,12 @@
 import { initializeColorFormatter } from "./console-format.js";
 
+/**
+ *
+ * @param {process.ReadableStream} processIO
+ * @param {*} listItems
+ * @returns
+ */
+
 function createSelectorInterface(processIO = {}, listItems) {
     let lastWrittenLineCount = 0;
     const { input, output } = processIO;
@@ -86,15 +93,6 @@ function createSelectorInterface(processIO = {}, listItems) {
                         const direction = isForwards ? 1 : -1;
 
                         movePointer(direction, isVertical);
-                        break;
-                    }
-                    case /\d/gu.test(key): {
-                        const numberIndex = Number.parseInt(key);
-                        pointerPosition.highlight = numberIndex;
-                        showPage(
-                            pointerPosition.page,
-                            pointerPosition.highlight
-                        );
                         break;
                     }
                     case key.charCodeAt(0) === 13: {
@@ -221,10 +219,12 @@ function createSelectorInterface(processIO = {}, listItems) {
             const indexDirection = isVertical ? direction : 0;
 
             const targetPage = carouselValue(page, pageDirection, pageCount);
+            const maxIndex = getPage(targetPage).length;
+
             const targetIndex = carouselValue(
-                index,
+                Math.min(index, maxIndex - 1),
                 indexDirection,
-                getPage(targetPage).length
+                maxIndex
             );
             pointerTo(targetPage, targetIndex);
         };
