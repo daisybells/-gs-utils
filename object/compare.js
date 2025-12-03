@@ -1,7 +1,7 @@
 /**
  * Deep comparison function between any two arrays or objects.
- * @param {any} inputA - First object to compare to.
- * @param {any} inputB - Second object to compare to
+ * @param {unknown} inputA - First object to compare to.
+ * @param {unknown} inputB - Second object to compare to
  * @param {object} [inputOptions] - configurable function options.
  * @param {number} [inputOptions.maxDepth = 5] - maximum depth for
  * object search, defaults to 5.
@@ -18,10 +18,11 @@ function eqeqeq(inputA, inputB, inputOptions = {}) {
 
     function eqeqeqHandler(inputA, inputB, maxDepth, depth = 0) {
         const nextDepth = depth + 1;
+        const isBeyondMaxDepth = maxDepth > 0 && depth > maxDepth;
 
         switch (true) {
-            case maxDepth > 0 && depth > maxDepth:
-                throw new Error("Error: Max depth reached.");
+            case isBeyondMaxDepth:
+                throw new Error("Error: max depth reached on eqeqeq.");
             case typeof inputA !== typeof inputB:
                 return false;
             case !inputA || typeof inputA !== "object":

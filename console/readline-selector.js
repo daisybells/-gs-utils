@@ -4,7 +4,7 @@ import { truncate } from "../string/basic.js";
 /**
  * @typedef Answer
  * @property {Number} index - Index of chosen answer. Returns -1 if cancelled.
- * @property {*} value - Value from chosen answer.
+ * @property {never} value - Value from chosen answer.
  *
  * @typedef {[string, any]} SelectorEntry - Display string and output value.
  *
@@ -14,9 +14,9 @@ import { truncate } from "../string/basic.js";
  * @property {function(): void} clear - Clear terminal input of last written question.
  *
  * @callback AskQuestion
- * @param {string} prompt - Question to prompt the user with.
+ * @param {String} prompt - Question to prompt the user with.
  * @param {SelectorEntry[]} listEntries - Entries to use for question.
- * @returns {Promise<Answer|null>}
+ * @returns {Promise<Answer>}
  */
 
 /**
@@ -25,7 +25,7 @@ import { truncate } from "../string/basic.js";
  * @param {NodeJS.WritableStream} output - Process output.
  * @param {Object} inputOptions - Configurable question options.
  * @param {number} [inputOptions.maxPerPage] - Max items per page.
- * @param {string} [inputOptions.navigationHint] - Text output of the navigation hint.
+ * @param {String} [inputOptions.navigationHint] - Text output of the navigation hint.
  * @returns {SelectorInterface}
  */
 

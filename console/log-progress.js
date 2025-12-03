@@ -1,32 +1,31 @@
 import readline from "node:readline";
 import { initializeCFormatter } from "../string/c-format.js";
-
 /**
  *
  * @callback format
- * @param {any} currentValue - The returned value from a given promise.
+ * @param {never} currentValue - The returned value from a given promise.
  * @param {number} index - Current promise index that is being processed.
  * @param {number} max - Max value of the input Promise array.
  *
- * @returns {string} - Formatted string to be printed to console.
+ * @returns {String} - Formatted string to be printed to console.
  */
 
 /**
  * Takes an array of promises and pretty prints a console.log for each
  * iteration of the array.
- * @param {Promise[]} promiseArray - Array of asynchronous promises
- * @param {format|string} [inputMessage] - Message to output for each iteration. Utilizes
+ * @param {Promise[]} promises - Array of asynchronous promises
+ * @param {format|import("../string/c-format.js").CFormatString} [message] - Message to output for each iteration. Utilizes
  * C code format specifiers for string input. String values are mapped as follows:
- * %c: current value
- * %i: current index,
- * %m: max value,
- * %p: current percentage,
- * @param {object} [inputOptions] - Configurable function options.
+ * - %c: current value
+ * - %i: current index,
+ * - %m: max value,
+ * - %p: current percentage,
+ * @param {Object} [inputOptions] - Configurable function options.
  * @param {Boolean} [inputOptions.sync = false] - Process synchronously (true) or asynchronously (false).
  * @param {number} [inputOptions.throttleRate = 30] - Time between each terminal update in ms.
- * @returns {Promise<Array>} - Final await Promise.all() values transformed from initial array.
+ * @returns {Promise<never[]>} Final Promise.all() values transformed from initial array.
  */
-async function logProgress(promiseArray, inputMessage, inputOptions = {}) {
+async function logProgress(promises, message, inputOptions = {}) {
     const defaultOptions = { sync: false, throttleRate: 30 };
     const { sync: processSynchronously, throttleRate } = {
         ...defaultOptions,
@@ -36,20 +35,19 @@ async function logProgress(promiseArray, inputMessage, inputOptions = {}) {
     let lastTime = 0;
     let lastLineCount = 0;
 
-    const logMessage =
-        inputMessage || "Promise: %04i / %04m\nCompletion: %3.0p%%";
+    const itemsLength = promises.length;
 
+    const logMessage = message || `Promise: %04i / %04m\nCompletion: %3.0p%%`;
     const generate = generateMessageCurry(logMessage);
-    const itemsLength = promiseArray.length;
 
     if (!processSynchronously) {
-        const resolvedPromises = promiseArray.map(trackItem);
-        return await Promise.all(resolvedPromises);
+        const resolvedPromises = promises.map(trackItem);
+        return Promise.all(resolvedPromises);
     }
 
     const output = [];
 
-    for (const promise of promiseArray) {
+    for (const promise of promises) {
         output.push(await trackItem(promise));
     }
     return output;

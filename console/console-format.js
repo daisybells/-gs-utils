@@ -85,8 +85,8 @@ const decorationCodes = {
  * @param {String} - String to be formatted
  * @returns {StringFormatter}
  *
- * @callback ColorString - Convert an input string to a specific color.
- * @param {string} string - Input string to be changed.
+ * @callback ColorString - convert an input string to a specific color.
+ * @param {String} string - input string to be changed.
  * @param {...ColorCode} Colors - Color code parameters.
  * @returns {ColoredCLIString}
  *
