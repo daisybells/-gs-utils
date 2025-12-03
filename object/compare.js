@@ -3,33 +3,33 @@
  * @param {any} inputA - First object to compare to.
  * @param {any} inputB - Second object to compare to
  * @param {object} [inputOptions] - configurable function options.
- * @param {number} [inputOptions.max_depth = 5] - maximum depth for
+ * @param {number} [inputOptions.maxDepth = 5] - maximum depth for
  * object search, defaults to 5.
  * @returns {Boolean} are same (true) or are different (false)
  */
 function eqeqeq(inputA, inputB, inputOptions = {}) {
     const areArrays = argumentsMatchCurry((element) => Array.isArray(element));
     const defaultOptions = {
-        max_depth: 0,
+        maxDepth: 0,
     };
     const options = { ...defaultOptions, ...inputOptions };
 
-    return eqeqeqHandler(inputA, inputB, options.max_depth);
+    return eqeqeqHandler(inputA, inputB, options.maxDepth);
 
-    function eqeqeqHandler(inputA, inputB, max_depth, depth = 0) {
+    function eqeqeqHandler(inputA, inputB, maxDepth, depth = 0) {
         const nextDepth = depth + 1;
 
         switch (true) {
-            case max_depth > 0 && depth > max_depth:
+            case maxDepth > 0 && depth > maxDepth:
                 throw new Error("Error: Max depth reached.");
             case typeof inputA !== typeof inputB:
                 return false;
             case !inputA || typeof inputA !== "object":
                 return inputA === inputB;
             case areArrays(inputA, inputB):
-                return arraysEqual(inputA, inputB, max_depth, nextDepth);
+                return arraysEqual(inputA, inputB, maxDepth, nextDepth);
             default:
-                return objectsEqual(inputA, inputB, max_depth, nextDepth);
+                return objectsEqual(inputA, inputB, maxDepth, nextDepth);
         }
     }
 

@@ -824,7 +824,11 @@ const latin_map = {
     ᵥ: "v",
     ₓ: "x",
 };
-
+/**
+ * Latinizes non-English characters within text.
+ * @param {String} string
+ * @returns {String}
+ */
 function latinize(string) {
     return string.replace(/[^A-Za-z0-9\[\] ]/gu, (a) => {
         return latin_map[a] || a;

@@ -1,58 +1,91 @@
 import { initializeColorFormatter } from "./console-format.js";
+import { truncate } from "../string/basic.js";
 
 /**
+ * @typedef Answer
+ * @property {Number} index - Index of chosen answer. Returns -1 if cancelled.
+ * @property {*} value - Value from chosen answer.
  *
- * @param {process.ReadableStream} processIO
- * @param {*} listItems
- * @returns
+ * @typedef {[string, any]} SelectorEntry - Display string and output value.
+ *
+ * @typedef {Object} SelectorInterface
+ * @property {AskQuestion} question
+ * @property {function(): void} close - Exit selector interface.
+ * @property {function(): void} clear - Clear terminal input of last written question.
+ *
+ * @callback AskQuestion
+ * @param {string} prompt - Question to prompt the user with.
+ * @param {SelectorEntry[]} listEntries - Entries to use for question.
+ * @returns {Promise<Answer|null>}
  */
 
-function createSelectorInterface(processIO = {}, listItems) {
+/**
+ * Initialize a CLI selector interface.
+ * @param {NodeJS.ReadableStream} input - Process input.
+ * @param {NodeJS.WritableStream} output - Process output.
+ * @param {Object} inputOptions - Configurable question options.
+ * @param {number} [inputOptions.maxPerPage] - Max items per page.
+ * @param {string} [inputOptions.navigationHint] - Text output of the navigation hint.
+ * @returns {SelectorInterface}
+ */
+
+function createSelectorInterface(input, output, inputOptions = {}) {
+    const defaultOptions = {
+        maxPerPage: 10,
+        maxWidth: 60,
+        navigationHint: "Navigate: using arrow keys or WASD",
+    };
+    const options = { ...defaultOptions, ...inputOptions };
+
     let lastWrittenLineCount = 0;
-    const { input, output } = processIO;
+
     input.setRawMode(true);
     input.resume();
     input.setEncoding("utf8");
 
-    return {
-        question: askQuestion,
-        close: () => {
-            input.pause();
-        },
-        clear: () => {
-            output.moveCursor(-100, -lastWrittenLineCount);
-            output.clearScreenDown();
-        },
+    const closeInterface = () => {
+        input.pause();
+    };
+    const clearInterface = () => {
+        output.moveCursor(-100, -lastWrittenLineCount);
+        output.clearScreenDown();
+        lastWrittenLineCount = 0;
     };
 
-    function askQuestion(prompt, inputOptions) {
-        const defaultOptions = {
-            maxPerPage: 10,
-            navigationHint: "Navigate: using arrow keys or WASD",
-        };
-        const options = { ...defaultOptions, ...inputOptions };
+    return {
+        question: askQuestion,
+        close: closeInterface,
+        clear: clearInterface,
+    };
 
-        return new Promise(enableSelector(prompt, options));
+    /**
+     * @type {AskQuestion} - Promise based question handler
+     */
+    function askQuestion(prompt, listEntries) {
+        lastWrittenLineCount = 0;
+        return new Promise(enableSelector(prompt, listEntries));
     }
-    function enableSelector(prompt, options) {
-        const { maxPerPage } = options;
-
+    function enableSelector(prompt, listEntries) {
         return (resolve) => {
             const pointerPosition = {
                 page: 0,
                 index: 0,
             };
-            const { pointerTo, movePointer } = createReadlineSelectorMethods(
-                prompt,
-                options,
-                pointerPosition
-            );
+            const { pointerTo, movePointer, getCurrentIndex } =
+                createReadlineSelectorMethods(
+                    prompt,
+                    listEntries,
+                    pointerPosition
+                );
             pointerTo(pointerPosition.page, pointerPosition.index);
 
-            const closeReadline = () => {
-                console.log("\nCancelling readline...");
+            const exitReadline = () => {
+                console.log("\nExiting readline...");
                 input.pause();
-                resolve(null);
+                resolve({
+                    index: -1,
+                    value: null,
+                });
             };
 
             const keyDirectionMap = {
@@ -96,26 +129,25 @@ function createSelectorInterface(processIO = {}, listItems) {
                         break;
                     }
                     case key.charCodeAt(0) === 13: {
-                        const elementIndex =
-                            pointerPosition.page * maxPerPage +
-                            pointerPosition.index;
+                        const elementIndex = getCurrentIndex();
                         output.cursorTo(0);
                         output.clearScreenDown();
+
                         resolve({
                             index: elementIndex,
-                            value: listItems[elementIndex],
+                            value: listEntries[elementIndex][1],
                         });
                         break;
                     }
                     case key.charCodeAt(0) === 127: {
-                        closeReadline();
+                        exitReadline();
                         break;
                     }
                     case key.charCodeAt(0) === 27: {
                         const arrowKey =
                             keyDirectionMap[String(key.charCodeAt(2))];
                         if (!arrowKey) {
-                            closeReadline();
+                            exitReadline();
                             return;
                         }
                         const { direction, isVertical } = arrowKey;
@@ -130,19 +162,19 @@ function createSelectorInterface(processIO = {}, listItems) {
 
     function createReadlineSelectorMethods(
         prompt,
-        inputOptions,
+        listEntries,
         pointerPosition
     ) {
         const formatter = initializeColorFormatter();
-        const { output } = processIO;
+        const displayValues = listEntries.map(([display]) => display);
 
-        const { maxPerPage, navigationHint } = inputOptions;
-        const pageCount = Math.ceil(listItems.length / maxPerPage);
+        const { maxPerPage, maxWidth, navigationHint } = options;
+        const pageCount = Math.ceil(displayValues.length / maxPerPage);
 
         const getPage = (pageNumber) => {
             const startIndex = pageNumber * maxPerPage;
             const endIndex = startIndex + maxPerPage;
-            return listItems.slice(startIndex, endIndex);
+            return displayValues.slice(startIndex, endIndex);
         };
 
         const padPage = (pageItems, currentPage) => {
@@ -162,11 +194,13 @@ function createSelectorInterface(processIO = {}, listItems) {
             const isHighlighted = index === pointerPosition.index;
             const visualIndexPadded = String(number).padEnd(2, " ");
             const outputString = `${visualIndexPadded}. ${label}`;
-            if (!isHighlighted) return outputString;
-            const clearedOutput = formatter.clear(outputString);
-            const highlightIndicator =
-                "%(cyan,bright)f%(bold,italic,underline)d";
-            return formatter.apply(`${highlightIndicator}${clearedOutput}`);
+            const truncatedOutput = truncate(outputString, maxWidth);
+            if (!isHighlighted) return truncatedOutput;
+            return formatter
+                .format(truncatedOutput)
+                .toColor("cyan", "bright")
+                .decorate("bold", "italic", "underline")
+                .toString();
         };
 
         const createBody = (pageNumber) => {
@@ -229,9 +263,14 @@ function createSelectorInterface(processIO = {}, listItems) {
             pointerTo(targetPage, targetIndex);
         };
 
+        const getCurrentIndex = () => {
+            return pointerPosition.page * maxPerPage + pointerPosition.index;
+        };
+
         return {
             pointerTo,
             movePointer,
+            getCurrentIndex,
         };
     }
 }

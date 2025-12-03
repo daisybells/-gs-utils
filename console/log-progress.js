@@ -26,11 +26,11 @@ import { initializeCFormatter } from "../string/c-format.js";
  * @param {number} [inputOptions.throttleRate = 30] - Time between each terminal update in ms.
  * @returns {Promise<Array>} - Final await Promise.all() values transformed from initial array.
  */
-async function logProgress(promiseArray, inputMessage, inputOptions) {
+async function logProgress(promiseArray, inputMessage, inputOptions = {}) {
     const defaultOptions = { sync: false, throttleRate: 30 };
     const { sync: processSynchronously, throttleRate } = {
         ...defaultOptions,
-        inputOptions,
+        ...inputOptions,
     };
     let currentIndex = 0;
     let lastTime = 0;
