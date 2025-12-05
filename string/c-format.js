@@ -4,17 +4,17 @@ import { clearRegex } from "./normalize.js";
  * @typedef {String} CFormatString - String with percent (%) codes to be
  * replaced by values within the input dataMap.
  *
- * @typedef {Object<any>} DataMap - Key-value pairs that determine
+ * @typedef {{[key: string]: any}} DataMap - Key-value pairs that determine
  * the output data for any given a specifier.
  */
 
 /**
  * @callback ApplyFormatting - Applies C-Formatting to input string.
- * @param {CFormatString} - String with percent (%) codes to be replaced.
+ * @param {CFormatString} input - String with percent (%) codes to be replaced.
  * @returns {String} - String with formatted output.
  *
  * @callback ClearFormatting - Clears a string from being
- * @param {CFormatString} - Data to be cleared.
+ * @param {CFormatString} input - Data to be cleared.
  * @returns {String} - Cleared string to prevent Apply conflicts.
  *
  */
@@ -71,10 +71,22 @@ function initializeCFormatter(dataMap) {
         },
     };
 }
+/**
+ *
+ * @param {Number} inputNumber
+ * @param {String} minLength
+ * @param {String} order
+ * @returns
+ */
 function formatNumber(inputNumber, minLength, order) {
     return formatMinLength(formatOrder(inputNumber, order), minLength);
 }
-
+/**
+ *
+ * @param {String} inputNumber
+ * @param {String} minLengthString
+ * @returns {String}
+ */
 function formatMinLength(inputNumber, minLengthString) {
     if (minLengthString === undefined) return String(inputNumber);
 
@@ -87,6 +99,12 @@ function formatMinLength(inputNumber, minLengthString) {
 
     return String(inputNumber).padStart(minLength, padCharacter);
 }
+/**
+ *
+ * @param {Number} inputNumber
+ * @param {String} orderString
+ * @returns {String}
+ */
 function formatOrder(inputNumber, orderString) {
     if (orderString === undefined) return String(inputNumber);
     const order = Number.parseInt(orderString);

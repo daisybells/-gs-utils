@@ -8,10 +8,36 @@ import { truncate } from "../string/basic.js";
  *
  * @typedef {[string, any]} SelectorEntry - Display string and output value.
  *
+ * @typedef {-1|0|1} MoveDirection - -1: Backwards, 0: No turn, 1: Forwards
+ *
+ * @typedef {{
+ * page: Number
+ * index: Number}} PointerPosition
+ *
  * @typedef {Object} SelectorInterface
  * @property {AskQuestion} question
  * @property {function(): void} close - Exit selector interface.
  * @property {function(): void} clear - Clear terminal input of last written question.
+ */
+
+/**
+ * @callback PointerTo
+ * @param {Number} page
+ * @param {Number} itemIndex
+ * @returns {void}
+ *
+ * @callback MovePointer
+ * @param {MoveDirection} direction
+ * @param {Boolean} isVertical
+ * @returns {void}
+ *
+ * @callback GetCurrentItemIndex
+ * @returns {Number}
+ *
+ * @typedef {{
+ * pointerTo: PointerTo
+ * movePointer: MovePointer
+ * getCurrentIndex: GetCurrentItemIndex}} SelectorMethods
  *
  * @callback AskQuestion
  * @param {String} prompt - Question to prompt the user with.
@@ -21,8 +47,8 @@ import { truncate } from "../string/basic.js";
 
 /**
  * Initialize a CLI selector interface.
- * @param {NodeJS.ReadableStream} input - Process input.
- * @param {NodeJS.WritableStream} output - Process output.
+ * @param {NodeJS.ReadStream} input - Process input.
+ * @param {NodeJS.WriteStream} output - Process output.
  * @param {Object} inputOptions - Configurable question options.
  * @param {number} [inputOptions.maxPerPage] - Max items per page.
  * @param {String} [inputOptions.navigationHint] - Text output of the navigation hint.
@@ -111,7 +137,8 @@ function createSelectorInterface(input, output, inputOptions = {}) {
                 },
             };
 
-            input.on("data", (key) => {
+            input.on("data", (keyData) => {
+                const key = keyData.toString("utf8");
                 if (key === "\u0003") {
                     console.log(
                         "Termination signal received. Exiting process..."
@@ -159,7 +186,13 @@ function createSelectorInterface(input, output, inputOptions = {}) {
             });
         };
     }
-
+    /**
+     *
+     * @param {String} prompt
+     * @param {[String, any]} listEntries
+     * @param {PointerPosition} pointerPosition
+     * @returns {SelectorMethods}
+     */
     function createReadlineSelectorMethods(
         prompt,
         listEntries,
@@ -171,12 +204,30 @@ function createSelectorInterface(input, output, inputOptions = {}) {
         const { maxPerPage, maxWidth, navigationHint } = options;
         const pageCount = Math.ceil(displayValues.length / maxPerPage);
 
+        /**
+         *
+         * @param {Number} pageNumber
+         * @returns {any[]}
+         */
         const getPage = (pageNumber) => {
             const startIndex = pageNumber * maxPerPage;
             const endIndex = startIndex + maxPerPage;
             return displayValues.slice(startIndex, endIndex);
         };
 
+        /**
+         * @typedef {{
+         * exists: Boolean
+         * label: String
+         * number: Number}} PageItem
+         */
+
+        /**
+         *
+         * @param {String[]} pageItems
+         * @param {Number} currentPage
+         * @returns {PageItem[]}
+         */
         const padPage = (pageItems, currentPage) => {
             return Array.from(Array(maxPerPage).keys(), (index) => {
                 const exists = index < pageItems.length;
@@ -188,6 +239,12 @@ function createSelectorInterface(input, output, inputOptions = {}) {
             });
         };
 
+        /**
+         *
+         * @param {PageItem} listItem
+         * @param {Number} index
+         * @returns {String}
+         */
         const makeListItemDisplay = (listItem, index) => {
             const { label, number, exists } = listItem;
             if (!exists) return "";
@@ -203,6 +260,11 @@ function createSelectorInterface(input, output, inputOptions = {}) {
                 .toString();
         };
 
+        /**
+         *
+         * @param {Number} pageNumber
+         * @returns {String}
+         */
         const createBody = (pageNumber) => {
             const pageItems = getPage(pageNumber);
             const paddedItems = padPage(pageItems, pageNumber);
@@ -210,42 +272,64 @@ function createSelectorInterface(input, output, inputOptions = {}) {
             return paddedItems.map(makeListItemDisplay).join("\n");
         };
 
+        /**
+         *
+         * @param {Number} pageNumber
+         * @returns {String}
+         */
         const formatNumber = (pageNumber) =>
             formatter
                 .format(String(pageNumber))
                 .toColor("yellow")
                 .decorate("bold")
                 .toString();
-
-        const createPageContents = (pageNumber, itemIndex) => {
-            const pageBody = createBody(pageNumber, itemIndex);
+        /**
+         *
+         * @param {Number} pageNumber
+         * @returns {String}
+         */
+        const createPageContents = (pageNumber) => {
+            const pageBody = createBody(pageNumber);
             const pageNumberDisplay = `Page ${formatNumber(
                 pageNumber + 1
             )} of ${formatNumber(pageCount)}`;
             return `${prompt}\n${pageBody}\n${pageNumberDisplay}\n${navigationHint}\n`;
         };
 
+        /**
+         *
+         * @param {String} pageContents
+         * @returns {void}
+         */
         const writeToOutput = (pageContents) => {
             if (lastWrittenLineCount > 0) {
                 output.moveCursor(0, -lastWrittenLineCount);
             }
             lastWrittenLineCount = (pageContents.match(/\n/gu) || []).length;
             output.clearScreenDown();
-            output.clearLine();
+            output.clearLine(0);
             output.write(pageContents);
         };
 
-        const displayPage = (pageNumber = 0, itemIndex = 0) => {
-            const pageContents = createPageContents(pageNumber, itemIndex);
+        /**
+         *
+         * @param {Number} pageNumber
+         * @returns {void}
+         */
+        const displayPage = (pageNumber = 0) => {
+            const pageContents = createPageContents(pageNumber);
             writeToOutput(pageContents);
         };
 
+        /** @type {PointerTo} */
         const pointerTo = (page, itemIndex) => {
             pointerPosition.page = page;
             pointerPosition.index = itemIndex;
 
-            displayPage(page, itemIndex);
+            displayPage(page);
         };
+
+        /** @type {MovePointer} */
         const movePointer = (direction, isVertical) => {
             const { page, index } = pointerPosition;
 
@@ -263,6 +347,7 @@ function createSelectorInterface(input, output, inputOptions = {}) {
             pointerTo(targetPage, targetIndex);
         };
 
+        /** @type {GetCurrentItemIndex} */
         const getCurrentIndex = () => {
             return pointerPosition.page * maxPerPage + pointerPosition.index;
         };

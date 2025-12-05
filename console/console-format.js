@@ -73,16 +73,20 @@ const decorationCodes = {
  * @returns {StringFormatter}
  * @callback FormatterToString - Convert StringFormatter back to its initial string value.
  * @returns {ColoredCLIString}
+ *
+ * @callback ClearString - Prevent string from being formatted.
+ * @param {EscapedColorString} string
+ * @returns {String}
  */
 
 /**
  *
  * @callback ApplyColorFormat
- * @param {EscapedColorString} - String with ColorFormatter escape codes.
+ * @param {EscapedColorString} string - String with ColorFormatter escape codes.
  * @returns {ColoredCLIString} - Colored output CLI string.
  *
  * @callback StringToFormatter - Convert string to a StringFormatter Object
- * @param {String} - String to be formatted
+ * @param {String} string - String to be formatted
  * @returns {StringFormatter}
  *
  * @callback ColorString - convert an input string to a specific color.
@@ -98,7 +102,9 @@ const decorationCodes = {
  * @typedef {Object} ColorFormat - Object with color formatting methods.
  * @property {ApplyColorFormat} apply - Apply function for escaped strings.
  * @property {StringToFormatter} format - Convert string to formatter instance.
- * @property {ColorString} toColor
+ * @property {DecorateString} decorate - Add decorations to input string.
+ * @property {ColorString} toColor - Add color to input string.
+ * @property {ClearString} clear - Prevent escape codes from being registeres.
  *
  */
 /**
@@ -139,7 +145,11 @@ function initializeColorFormatter() {
         decorate: decorateString,
         clear: clearString,
     };
-    /** @type {FormatterToString} */
+    /**
+     *
+     * @param {String} string
+     * @returns {StringFormatter}
+     */
     function makeFormatter(string) {
         return {
             toColor: (..._arguments) => {
@@ -168,6 +178,7 @@ function initializeColorFormatter() {
         return addEscapesToString(string, escapeSequence);
     }
 
+    /** @type {ClearString} */
     function clearString(string) {
         return string.replaceAll(selectorRegex, (match) => {
             return `${IGNORE_CHARACTER}${match}`;
@@ -207,13 +218,30 @@ function initializeColorFormatter() {
         }
     }
 
-    function createColorEscape(escapeCodes) {
-        const { color, brightness, fgbg } = escapeCodes;
+    /**
+     * @typedef {{
+     * color?: String
+     * brightness?: String
+     * fgbg?: String}} ColorEscapes
+     */
+
+    /**
+     *
+     * @param {ColorEscapes} colorCodes
+     * @returns {String}
+     */
+    function createColorEscape(colorCodes) {
+        const { color, brightness, fgbg } = colorCodes;
         if (!color) return "";
         const escapeSequence = `${fgbg}${color}${brightness}`;
         return addEscapeToCode(escapeSequence);
     }
 
+    /**
+     *
+     * @param {String[]} specifiersArray
+     * @returns {String[]}
+     */
     function extractDecorationCodes(specifiersArray) {
         return specifiersArray.reduce((accumulator, specifier) => {
             const decorationCode = decorationCodes[specifier];
@@ -222,6 +250,11 @@ function initializeColorFormatter() {
         }, []);
     }
 
+    /**
+     *
+     * @param {String[]} specifiersArray
+     * @returns {ColorEscapes}
+     */
     function extractEscapeCodes(specifiersArray) {
         return specifiersArray.reduce(trackEscapeCode, {
             color: "",
@@ -229,6 +262,12 @@ function initializeColorFormatter() {
             fgbg: fgbgCodes.text,
         });
     }
+    /**
+     *
+     * @param {*} accumulator
+     * @param {*} currentValue
+     * @returns
+     */
     function trackEscapeCode(accumulator, currentValue) {
         if (accumulator.color === RESET) return accumulator;
         const colorCode = colorCodes[currentValue];
@@ -256,10 +295,21 @@ function initializeColorFormatter() {
         return accumulator;
     }
 
+    /**
+     *
+     * @param {String} code
+     * @returns {String}
+     */
     function addEscapeToCode(code) {
         return `${ESCAPE_CHARACTER}[${code}m`;
     }
 
+    /**
+     *
+     * @param {String} string
+     * @param {String} escapes
+     * @returns {ColoredCLIString}
+     */
     function addEscapesToString(string, escapes) {
         const coloredString = `${escapes}${string}`;
         if (!coloredString.endsWith(RESET_ESCAPE)) {

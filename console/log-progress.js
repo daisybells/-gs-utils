@@ -3,7 +3,7 @@ import { initializeCFormatter } from "../string/c-format.js";
 /**
  *
  * @callback format
- * @param {never} currentValue - The returned value from a given promise.
+ * @param {any} currentValue - The returned value from a given promise.
  * @param {number} index - Current promise index that is being processed.
  * @param {number} max - Max value of the input Promise array.
  *
@@ -23,7 +23,7 @@ import { initializeCFormatter } from "../string/c-format.js";
  * @param {Object} [inputOptions] - Configurable function options.
  * @param {Boolean} [inputOptions.sync = false] - Process synchronously (true) or asynchronously (false).
  * @param {number} [inputOptions.throttleRate = 30] - Time between each terminal update in ms.
- * @returns {Promise<never[]>} Final Promise.all() values transformed from initial array.
+ * @returns {Promise<any[]>} Final Promise.all() values transformed from initial array.
  */
 async function logProgress(promises, message, inputOptions = {}) {
     const defaultOptions = { sync: false, throttleRate: 30 };
@@ -52,6 +52,11 @@ async function logProgress(promises, message, inputOptions = {}) {
     }
     return output;
 
+    /**
+     *
+     * @param {Promise<any>} promise
+     * @returns {Promise<any>}
+     */
     async function trackItem(promise) {
         const result = await promise;
         currentIndex++;
@@ -65,6 +70,12 @@ async function logProgress(promises, message, inputOptions = {}) {
 
         return result;
     }
+    /**
+     *
+     * @param {Number} currentValue
+     * @param {Number} index
+     * @param {Number} max
+     */
     function updateTerminal(currentValue, index, max) {
         const message = `${generate(currentValue, index, max)}\n`;
 
@@ -78,6 +89,11 @@ async function logProgress(promises, message, inputOptions = {}) {
     }
 }
 
+/**
+ *
+ * @param {String|format} input
+ * @returns {format}
+ */
 function generateMessageCurry(input) {
     if (typeof input === "function") return input;
 

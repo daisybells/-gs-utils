@@ -11,11 +11,11 @@ function capitalize(string) {
  * Truncates an input string to not exceed a specified maxLength
  * @param {String} string
  * @param {Number} maxLength
- * @param {{indicator: String}} inputOptions
+ * @param {{indicator?: String}} [inputOptions]
  * @returns {String}
  */
 function truncate(string, maxLength, inputOptions = {}) {
-    const { indicator } = { indicator: "...", inputOptions };
+    const { indicator } = { indicator: "...", ...inputOptions };
 
     if (string.length <= maxLength) {
         return string;

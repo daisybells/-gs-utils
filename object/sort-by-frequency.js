@@ -1,3 +1,8 @@
+/**
+ *
+ * @param {never[]} array
+ * @returns {never[]}
+ */
 function sortArrayByFrequency(array) {
     const frequencyMap = new Map();
 

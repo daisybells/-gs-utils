@@ -10,7 +10,7 @@ import { createProgressBarGenerator } from "../console/progress-bar.js";
  * Callback function that filters out certain files from an array of files.
  *
  * @callback pathFilter
- * @param {import("node:fs").PathLike} filePath - Input file path from the filter.
+ * @param {String} filePath - Input file path from the filter.
  * @returns {Boolean} - Determines whether file should be included or excluded in array.
  */
 
@@ -18,17 +18,17 @@ import { createProgressBarGenerator } from "../console/progress-bar.js";
  * Callback function that determines if two files are equal or not.
  *
  * @callback compare
- * @param {import("node:fs").PathLike} filePathA - First file path to be compared.
- * @param {import("node:fs").PathLike} filePathB - Second file path to be compared.
- * @returns {Boolean} - Returns (true) if file stats are the same, returns (false)
+ * @param {String} filePathA - First file path to be compared.
+ * @param {String} filePathB - Second file path to be compared.
+ * @returns {Boolean|Promise<Boolean>} - Returns (true) if file stats are the same, returns (false)
  * if file stats are different.
  */
 
 /**
  * Asynchronously sync an output directory with a given input directory
  *
- * @param {import("node:fs").PathLike} inputDirectory - Directory to copy files from.
- * @param {import("node:fs").PathLike} outputDirectory - Directory to copy files into
+ * @param {String} inputDirectory - Directory to copy files from.
+ * @param {String} outputDirectory - Directory to copy files into
  * @param {object} [inputOptions] - Configurable settings for the function.
  *
  * @param {pathFilter} [inputOptions.filterInput = null] - Callback function that filters

@@ -33,7 +33,14 @@ function eqeqeq(inputA, inputB, inputOptions = {}) {
                 return objectsEqual(inputA, inputB, maxDepth, nextDepth);
         }
     }
-
+    /**
+     *
+     * @param {any[]} arrayA
+     * @param {any[]} arrayB
+     * @param {Number} max_depth
+     * @param {Number} depth
+     * @returns {Boolean}
+     */
     function arraysEqual(arrayA, arrayB, max_depth, depth) {
         if (!areArrays(arrayA, arrayB)) {
             throw new Error(`Error: inputs must both be arrays.`);
@@ -47,7 +54,14 @@ function eqeqeq(inputA, inputB, inputOptions = {}) {
             eqeqeqHandler(value, bSorted[index], max_depth, depth)
         );
     }
-
+    /**
+     *
+     * @param {Object} objectA
+     * @param {Object} objectB
+     * @param {Number} max_depth
+     * @param {Number} depth
+     * @returns {Boolean}
+     */
     function objectsEqual(objectA, objectB, max_depth, depth) {
         if (typeof objectA !== "object" || typeof objectA !== "object") {
             throw new Error("Error: inputs must be of type 'object'.");
@@ -69,7 +83,16 @@ function eqeqeq(inputA, inputB, inputOptions = {}) {
         return objectsAreSame;
     }
 }
-
+/**
+ * @callback Matches
+ * @param {...any} item
+ * @returns {Boolean}
+ */
+/**
+ *
+ * @param {(arg: any[]) => Boolean} callback
+ * @returns {Matches}
+ */
 function argumentsMatchCurry(callback) {
     return (..._arguments) => _arguments.every(callback);
 }

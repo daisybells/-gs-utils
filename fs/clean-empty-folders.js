@@ -3,37 +3,50 @@ import path from "node:path";
 
 const HIDDEN_FILES_SET = new Set([".DS_Store", "Desktop.ini"]);
 
+const defaultOptions = {
+    deleteHiddenFiles: true,
+    filter: null,
+    maxDepth: 0,
+};
+
 /**
  * Filter to ignore specific directories when doing the directory clear.
- * @callback fileFilter
- * @param {import("node:fs").PathLike} - Current filepath.
+ * @callback FileFilter
+ * @param {String} filepath - Current filepath.
  * @returns {Boolean} - Process file (true) or skip file (false).
  */
 
 /**
- * Recursively deletes all empty folders from a given directory.
- * @param {import("node:fs").PathLike} directory - Directory to clean.
- * @param {object} [inputOptions] - Configurable options.
- * @param {Boolean} [inputOptions.deleteHiddenFiles = false] - Chooses whether to include
+ * @typedef {Object} CleanEmptyOptions
+ * @property {Boolean} [inputOptions.deleteHiddenFiles = false] - Chooses whether to include
  * hidden files such as ".DS_Store" when determining if a directory is empty.
- * @param {fileFilter} [inputOptions.filter = null] - Filter out directories to ignore while processing.
- * @param {number} [inputOptions.maxDepth = 0] - Maximum allowed depth of recursion. Default (0) means
+ * @property {FileFilter} [inputOptions.filter = null] - Filter out directories to ignore while processing.
+ * @property {number} [inputOptions.maxDepth = 0] - Maximum allowed depth of recursion. Default (0) means
  * no limit.
+ *
+ */
+
+/**
+ * Recursively deletes all empty folders from a given directory.
+ * @param {String} directory - Directory to clean.
+ * @param {CleanEmptyOptions} [inputOptions] - Configurable options.
+
  * @returns {Promise<void>}
  */
 async function cleanEmptyFolders(directory, inputOptions = {}) {
     await cleanEmptyFoldersHandler(directory, inputOptions);
 }
+/**
+ *
+ * @param {String} directory
+ * @param {CleanEmptyOptions} [inputOptions]
+ * @returns {Promise<Boolean>}
+ */
 async function cleanEmptyFoldersHandler(
     directory,
     inputOptions = {},
     depth = 0
 ) {
-    const defaultOptions = {
-        deleteHiddenFiles: true,
-        filter: null,
-        maxDepth: 0,
-    };
     const options = { ...defaultOptions, ...inputOptions };
 
     const { deleteHiddenFiles, filter, maxDepth } = options;
@@ -59,13 +72,14 @@ async function cleanEmptyFoldersHandler(
             options,
             depth + 1
         );
-        return !isDeleted;
+        if (isDeleted) return null;
+        return file;
     });
+
     const remainingFiles = (await Promise.all(removePromises)).filter(Boolean);
 
     const workingFiles = deleteHiddenFiles
         ? remainingFiles.filter((file) => {
-              if (file === true) return true;
               return !HIDDEN_FILES_SET.has(file.name);
           })
         : remainingFiles;
