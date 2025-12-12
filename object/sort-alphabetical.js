@@ -1,8 +1,8 @@
 /**
  *
- * @param {never[]} stringArray
- * @param {(value: never) => string} callback
- * @returns {never[]}
+ * @param {any[]} stringArray
+ * @param {(value: any) => string} callback
+ * @returns {any[]}
  */
 function sortAlphabetical(stringArray, callback) {
     const hasCallback = typeof callback === "function";

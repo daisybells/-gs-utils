@@ -2,56 +2,55 @@ import { initializeColorFormatter } from "./console-format.js";
 import { truncate } from "../string/basic.js";
 
 /**
- * @typedef Answer
- * @property {Number} index - Index of chosen answer. Returns -1 if cancelled.
- * @property {never} value - Value from chosen answer.
- *
- * @typedef {[string, any]} SelectorEntry - Display string and output value.
  *
  * @typedef {-1|0|1} MoveDirection - -1: Backwards, 0: No turn, 1: Forwards
  *
  * @typedef {{
  * page: Number
  * index: Number}} PointerPosition
- *
+ */
+
+/**
  * @typedef {Object} SelectorInterface
- * @property {AskQuestion} question
+ * @property {<ValueType, ReturnIndex extends Boolean = false>(
+ * prompt: String,
+ * listEntries: SelectorEntry<ValueType>[],
+ * options?: QuestionOptions<ReturnIndex>
+ * ) => Promise<SelectorReturnValue<ValueType, ReturnIndex>>} question
  * @property {function(): void} close - Exit selector interface.
  * @property {function(): void} clear - Clear terminal input of last written question.
  */
 
 /**
- * @callback PointerTo
- * @param {Number} page
- * @param {Number} itemIndex
- * @returns {void}
- *
- * @callback MovePointer
- * @param {MoveDirection} direction
- * @param {Boolean} isVertical
- * @returns {void}
- *
- * @callback GetCurrentItemIndex
- * @returns {Number}
- *
- * @typedef {{
- * pointerTo: PointerTo
- * movePointer: MovePointer
- * getCurrentIndex: GetCurrentItemIndex}} SelectorMethods
- *
- * @callback AskQuestion
- * @param {String} prompt - Question to prompt the user with.
- * @param {SelectorEntry[]} listEntries - Entries to use for question.
- * @returns {Promise<Answer>}
+ * @template ValueType
+ * @template {Boolean} ReturnIndex
+ * @typedef {ReturnIndex extends true ? Number : ValueType|null} SelectorReturnValue
+ */
+
+/**
+ * @template SelectorValueType
+ * @typedef {[string, SelectorValueType]} SelectorEntry
+ */
+
+/**
+ * @template {Boolean} [ReturnIndex = false]
+ * @typedef {Object} QuestionOptions
+ * @property {ReturnIndex} [returnIndex = false]
+ */
+
+/**
+ * @typedef {Object} GlobalOptions
+ * @property {number} [inputOptions.maxPerPage = 10] - Max items per page.
+ * @property {String} [inputOptions.navigationHint] - Text output of the navigation hint.
+ * @property {number} [inputOptions.maxWidth = 60] - Max width of a given item.
  */
 
 /**
  * Initialize a CLI selector interface.
  * @param {NodeJS.ReadStream} input - Process input.
  * @param {NodeJS.WriteStream} output - Process output.
- * @param {Object} inputOptions - Configurable question options.
- * @param {number} [inputOptions.maxPerPage] - Max items per page.
- * @param {String} [inputOptions.navigationHint] - Text output of the navigation hint.
+ * @param {GlobalOptions} [inputOptions = {}] - Configurable question options.
+
  * @returns {SelectorInterface}
  */
 
@@ -59,6 +58,7 @@ function createSelectorInterface(input, output, inputOptions = {}) {
     const defaultOptions = {
         maxPerPage: 10,
         maxWidth: 60,
+        returnIndex: false,
         navigationHint: "Navigate: using arrow keys or WASD",
     };
     const options = { ...defaultOptions, ...inputOptions };
@@ -83,15 +83,51 @@ function createSelectorInterface(input, output, inputOptions = {}) {
         close: closeInterface,
         clear: clearInterface,
     };
+    /**
+     * @callback PointerTo
+     * @param {Number} page
+     * @param {Number} itemIndex
+     * @returns {void}
+     *
+     * @callback MovePointer
+     * @param {MoveDirection} direction
+     * @param {Boolean} isVertical
+     * @returns {void}
+     *
+     * @callback GetCurrentItemIndex
+     * @returns {Number}
+     *
+     * @typedef {{
+     * pointerTo: PointerTo
+     * movePointer: MovePointer
+     * getCurrentIndex: GetCurrentItemIndex}} SelectorMethods
+     *
+     */
 
     /**
-     * @type {AskQuestion} - Promise based question handler
+     * @template InitialSVT
+     * @template {Boolean} [ReturnIndex = false]
+     * @param {String} prompt
+     * @param {SelectorEntry<InitialSVT>[]} listEntries
+     * @param {QuestionOptions<ReturnIndex>} [questionOptions = {}]
+     * @returns {Promise<SelectorReturnValue<InitialSVT, ReturnIndex>>}
      */
-    function askQuestion(prompt, listEntries) {
+    function askQuestion(prompt, listEntries, questionOptions = {}) {
         lastWrittenLineCount = 0;
-        return new Promise(enableSelector(prompt, listEntries));
+        return new Promise(
+            enableSelector(prompt, listEntries, questionOptions)
+        );
     }
-    function enableSelector(prompt, listEntries) {
+
+    /**
+     * @template ValueType
+     * @template {Boolean} [ReturnIndex = false]
+     * @param {String} prompt
+     * @param {SelectorEntry<ValueType>[]} listEntries
+     * @param {QuestionOptions<ReturnIndex>} [questionOptions = {}]
+     * @returns {(resolve: (value: SelectorReturnValue<ValueType, ReturnIndex>) => void) => void}
+     */
+    function enableSelector(prompt, listEntries, questionOptions) {
         return (resolve) => {
             const pointerPosition = {
                 page: 0,
@@ -108,10 +144,7 @@ function createSelectorInterface(input, output, inputOptions = {}) {
             const exitReadline = () => {
                 console.log("\nExiting readline...");
                 input.pause();
-                resolve({
-                    index: -1,
-                    value: null,
-                });
+                resolve(null);
             };
 
             const keyDirectionMap = {
@@ -160,10 +193,17 @@ function createSelectorInterface(input, output, inputOptions = {}) {
                         output.cursorTo(0);
                         output.clearScreenDown();
 
-                        resolve({
-                            index: elementIndex,
-                            value: listEntries[elementIndex][1],
-                        });
+                        const returnValue = listEntries[elementIndex][1];
+
+                        const finalValue =
+                            /** @type {SelectorReturnValue<ValueType, ReturnIndex>} */ (
+                                questionOptions.returnIndex
+                                    ? elementIndex
+                                    : returnValue
+                            );
+
+                        resolve(finalValue);
+
                         break;
                     }
                     case key.charCodeAt(0) === 127: {
@@ -187,9 +227,9 @@ function createSelectorInterface(input, output, inputOptions = {}) {
         };
     }
     /**
-     *
+     * @template T
      * @param {String} prompt
-     * @param {[String, any]} listEntries
+     * @param {SelectorEntry<T>[]} listEntries
      * @param {PointerPosition} pointerPosition
      * @returns {SelectorMethods}
      */
@@ -229,7 +269,7 @@ function createSelectorInterface(input, output, inputOptions = {}) {
          * @returns {PageItem[]}
          */
         const padPage = (pageItems, currentPage) => {
-            return Array.from(Array(maxPerPage).keys(), (index) => {
+            return Array.from({ length: maxPerPage }, (value, index) => {
                 const exists = index < pageItems.length;
                 return {
                     exists,
@@ -360,6 +400,13 @@ function createSelectorInterface(input, output, inputOptions = {}) {
     }
 }
 
+/**
+ *
+ * @param {Number} value
+ * @param {MoveDirection} direction
+ * @param {Number} max
+ * @returns
+ */
 function carouselValue(value, direction, max) {
     return (value + direction + max) % max;
 }
