@@ -9,7 +9,8 @@ function mapFilter(array, callback) {
     return array.reduce((accumulator, currentValue, index, inputArray) => {
         const transformedValue = callback(currentValue, index, inputArray);
 
-        if (transformedValue === null) return accumulator;
+        if (transformedValue === null || transformedValue === false)
+            return accumulator;
 
         return [...accumulator, transformedValue];
     }, []);

@@ -130,16 +130,8 @@ async function syncDirectories(inputDirectory, outputDirectory, inputOptions) {
     }
 
     if (cleanEmpty) {
-        const relativeOutputFilter =
-            typeof filterOutput === "function"
-                ? (filepath) =>
-                      filterOutput(path.relative(outputDirectory, filepath))
-                : null;
-
         console.log("Cleaning empty folders...");
-        await cleanEmptyFolders(outputDirectory, {
-            filter: relativeOutputFilter,
-        });
+        await cleanEmptyFolders(outputDirectory);
     }
 
     console.log("\nDone.");

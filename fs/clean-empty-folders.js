@@ -3,12 +3,6 @@ import path from "node:path";
 
 const HIDDEN_FILES_SET = new Set([".DS_Store", "Desktop.ini"]);
 
-const defaultOptions = {
-    deleteHiddenFiles: true,
-    filter: null,
-    maxDepth: 0,
-};
-
 /**
  * Filter to ignore specific directories when doing the directory clear.
  * @callback FileFilter
@@ -34,21 +28,23 @@ const defaultOptions = {
  * @returns {Promise<void>}
  */
 async function cleanEmptyFolders(directory, inputOptions = {}) {
-    await cleanEmptyFoldersHandler(directory, inputOptions);
+    const defaultOptions = {
+        deleteHiddenFiles: true,
+        filter: null,
+        maxDepth: 0,
+    };
+    await cleanEmptyFoldersHandler(directory, {
+        ...defaultOptions,
+        ...inputOptions,
+    });
 }
 /**
  *
  * @param {String} directory
- * @param {CleanEmptyOptions} [inputOptions]
+ * @param {CleanEmptyOptions} options
  * @returns {Promise<Boolean>}
  */
-async function cleanEmptyFoldersHandler(
-    directory,
-    inputOptions = {},
-    depth = 0
-) {
-    const options = { ...defaultOptions, ...inputOptions };
-
+async function cleanEmptyFoldersHandler(directory, options, depth = 0) {
     const { deleteHiddenFiles, filter, maxDepth } = options;
     if (maxDepth > 0 && depth > maxDepth) {
         console.log(`rmdir: '${directory}' skipped -> Max depth reached.`);

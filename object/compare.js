@@ -16,6 +16,14 @@ function eqeqeq(inputA, inputB, inputOptions = {}) {
 
     return eqeqeqHandler(inputA, inputB, options.maxDepth);
 
+    /**
+     *
+     * @param {any} inputA
+     * @param {any} inputB
+     * @param {Number} maxDepth
+     * @param {Number} depth
+     * @returns {Boolean}
+     */
     function eqeqeqHandler(inputA, inputB, maxDepth, depth = 0) {
         const nextDepth = depth + 1;
         const isBeyondMaxDepth = maxDepth > 0 && depth > maxDepth;
@@ -63,12 +71,8 @@ function eqeqeq(inputA, inputB, inputOptions = {}) {
      * @returns {Boolean}
      */
     function objectsEqual(objectA, objectB, max_depth, depth) {
-        if (typeof objectA !== "object" || typeof objectA !== "object") {
-            throw new Error("Error: inputs must be of type 'object'.");
-        }
-
-        if (Array.isArray(objectA) || Array.isArray(objectB)) {
-            throw new Error("Error: inputs cannot be arrays.");
+        if (Array.isArray(objectA) !== Array.isArray(objectB)) {
+            return false;
         }
 
         const entriesA = Object.entries(objectA);
@@ -96,5 +100,13 @@ function eqeqeq(inputA, inputB, inputOptions = {}) {
 function argumentsMatchCurry(callback) {
     return (..._arguments) => _arguments.every(callback);
 }
+/**
+ * Simple object check.
+ * @param {any} item
+ * @returns {Boolean}
+ */
+function isObject(item) {
+    return typeof item === "object" && !Array.isArray(item);
+}
 
-export { eqeqeq };
+export { eqeqeq, isObject };

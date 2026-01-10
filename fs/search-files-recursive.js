@@ -4,8 +4,8 @@ import { mapFilter } from "../object/map-filter.js";
 
 /**
  * Callback function that takes an input base path and filters it.
- * @callback fileFilter
- * @param {String} filepath - Base filepath without the full path appended.
+ * @callback FileFilter
+ * @param {String} filepath - Selected filepath.
  * @returns {Boolean}
  **/
 
@@ -13,8 +13,8 @@ import { mapFilter } from "../object/map-filter.js";
  * @typedef {Object} SearchOptions
  * @property {Boolean} [inputOptions.fullPath = false] - Determines whether or not to
  * return full filepath
- * @property {fileFilter} [inputOptions.filter] - Function that determines how to filter
- * files.
+ * @property {FileFilter} [inputOptions.filter] - Function that determines how to filter
+ * files. Changes based on "asRoot" and "fullPath" options.
  * @property {Boolean} [inputOptions.includeDirectories = false] - Determines whether or not
  * to include directories in search
  * @property {Boolean} [inputOptions.asRoot = false] - Determines if the input directory
