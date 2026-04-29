@@ -6,15 +6,17 @@
     "private": true,
     "type": "module",
     "exports": {
-        ".": "./index.js",
-        "./fs": "./fs/index.js",
-        "./misc": "./misc/index.js",
-        "./object": "./object/index.js",
-        "./string": "./string/index.js",
-        "./console": "./console/index.js"
+        ".": "./dist/index.js",
+        "./fs": "./dist/fs/index.js",
+        "./misc": "./dist/misc/index.js",
+        "./object": "./dist/object/index.js",
+        "./string": "./dist/string/index.js",
+        "./console": "./dist/console/index.js",
+        "./types": "./dist/types/index.js"
     },
     "scripts": {
-        "debug": "node ./.debug/debug.js"
+        "debug": "tsx ./src/.debug/",
+        "build": "tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json"
     },
     "repository": {
         "type": "git",
@@ -26,5 +28,11 @@
     "bugs": {
         "url": "https://github.com/daisybells/-gs-utils/issues"
     },
-    "homepage": "https://github.com/daisybells/-gs-utils#readme"
+    "homepage": "https://github.com/daisybells/-gs-utils#readme",
+    "devDependencies": {
+        "@types/node": "^25.6.0",
+        "typescript": "^6.0.3",
+        "tsc-alias": "^1.8.16"
+    },
+    "dependencies": {}
 }

@@ -1,0 +1,32 @@
+{
+    "include": ["src/**/*.ts"],
+    "exclude": ["node_modules", "src/.**/*.ts"],
+    "compilerOptions": {
+        /* Base Options */
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "target": "esnext",
+        "verbatimModuleSyntax": true,
+        "allowJs": true,
+        "moduleDetection": "force",
+
+        /* Strictness */
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+
+        /* Transpiler options */
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "rootDir": "./src",
+        "outDir": "./dist",
+        "sourceMap": true,
+        "lib": ["esnext"],
+        "declaration": true,
+
+        /* Misc */
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "types": ["node"]
+    }
+}
