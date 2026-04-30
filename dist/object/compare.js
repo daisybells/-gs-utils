@@ -48,8 +48,8 @@ function eqeqeq(inputA, inputB, options) {
         return objectsAreSame;
     }
 }
-function isObject(item) {
+function isNonArrayObject(item) {
     return Boolean(item) && typeof item === "object" && !Array.isArray(item);
 }
-export { eqeqeq, isObject };
+export { eqeqeq, isNonArrayObject };
 //# sourceMappingURL=compare.js.map

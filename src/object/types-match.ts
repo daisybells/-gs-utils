@@ -1,5 +1,3 @@
-import { isObject } from "./compare.js";
-
 function typesMatch<T>(base: T, data: unknown): data is T {
     const baseIsObject = isObject(base);
     const dataIsObject = isObject(data);
@@ -14,6 +12,9 @@ function typesMatch<T>(base: T, data: unknown): data is T {
     if (Array.isArray(base)) {
         if (!Array.isArray(data)) {
             return false;
+        }
+        if (data.length === 0) {
+            return true;
         }
 
         const baseTypes = new Set(base.map((value) => typeof value));
@@ -34,12 +35,18 @@ function typesMatch<T>(base: T, data: unknown): data is T {
                 if (typeof dataEntry !== dataType) {
                     return true;
                 }
-                const hasMatchingBaseEntry = baseEntries.some((baseEntry) =>
-                    typesMatch(baseEntry, dataEntry),
-                );
+                const hasMatchingBaseEntry = baseEntries.some((baseEntry) => {
+                    return typesMatch(baseEntry, dataEntry);
+                });
                 return hasMatchingBaseEntry;
             });
         });
+    }
+
+    const dataEntries = Object.entries(data);
+    const baseKeys = Object.keys(base);
+    if (dataEntries.length !== baseKeys.length) {
+        return false;
     }
 
     return Object.entries(data).every(([key, dataValue]: [string, unknown]) => {
@@ -52,6 +59,10 @@ function typesMatch<T>(base: T, data: unknown): data is T {
         }
         return true;
     });
+}
+
+function isObject(data: unknown): data is object {
+    return typeof data === "object" && data !== null;
 }
 
 export { typesMatch };

@@ -7,5 +7,5 @@ import type { EqeqeqOptions } from "../types/object.js";
  * @returns
  */
 declare function eqeqeq(inputA: unknown, inputB: unknown, options?: Partial<EqeqeqOptions>): boolean;
-declare function isObject(item: unknown): item is object;
-export { eqeqeq, isObject };
+declare function isNonArrayObject(item: unknown): item is object;
+export { eqeqeq, isNonArrayObject };

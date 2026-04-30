@@ -82,8 +82,8 @@ function eqeqeq(
         return objectsAreSame;
     }
 }
-function isObject(item: unknown): item is object {
+function isNonArrayObject(item: unknown): item is object {
     return Boolean(item) && typeof item === "object" && !Array.isArray(item);
 }
 
-export { eqeqeq, isObject };
+export { eqeqeq, isNonArrayObject };
