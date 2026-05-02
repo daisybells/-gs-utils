@@ -1,3 +1,5 @@
+import { isObject } from "./compare.js";
+
 function typesMatch<T>(base: T, data: unknown): data is T {
     const baseIsObject = isObject(base);
     const dataIsObject = isObject(data);
@@ -59,10 +61,6 @@ function typesMatch<T>(base: T, data: unknown): data is T {
         }
         return true;
     });
-}
-
-function isObject(data: unknown): data is object {
-    return typeof data === "object" && data !== null;
 }
 
 export { typesMatch };

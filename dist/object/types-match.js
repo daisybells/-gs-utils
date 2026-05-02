@@ -1,3 +1,4 @@
+import { isObject } from "./compare.js";
 function typesMatch(base, data) {
     const baseIsObject = isObject(base);
     const dataIsObject = isObject(data);
@@ -52,9 +53,6 @@ function typesMatch(base, data) {
         }
         return true;
     });
-}
-function isObject(data) {
-    return typeof data === "object" && data !== null;
 }
 export { typesMatch };
 //# sourceMappingURL=types-match.js.map

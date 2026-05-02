@@ -86,4 +86,8 @@ function isNonArrayObject(item: unknown): item is object {
     return Boolean(item) && typeof item === "object" && !Array.isArray(item);
 }
 
-export { eqeqeq, isNonArrayObject };
+function isObject(data: unknown): data is object {
+    return typeof data === "object" && data !== null;
+}
+
+export { eqeqeq, isNonArrayObject, isObject };
