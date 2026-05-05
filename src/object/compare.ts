@@ -7,18 +7,18 @@ import type { EqeqeqOptions } from "../types/object.js";
  * @param options
  * @returns
  */
-function eqeqeq(
-    a: unknown,
+function eqeqeq<Atype>(
+    a: Atype,
     b: unknown,
     options?: Partial<EqeqeqOptions>,
-): boolean {
+): b is Atype {
     const { max_depth, sort_arrays }: EqeqeqOptions = {
         max_depth: 0,
         sort_arrays: false,
         ...(options || {}),
     };
 
-    const firstCall: [unknown, unknown] = [a, b];
+    const firstCall: [Atype, unknown] = [a, b];
     const callStack: [unknown, unknown][] = [firstCall];
 
     let isEqual: boolean = true;
