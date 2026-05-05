@@ -10,7 +10,7 @@ declare function sleep(time_milliseconds: number): Promise<void>;
  * @param timeout
  * @returns
  */
-declare function debounce<A, R>(callback: (...args: A[]) => R, timeout?: number): (...args: A[]) => Promise<R>;
+declare function debounce<A>(callback: (...args: A[]) => unknown, timeout?: number): (...args: A[]) => Promise<void>;
 /**
  * Ensure that only one of one or more functions are running at any given time.
  * @param callbacks

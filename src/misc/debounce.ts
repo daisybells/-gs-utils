@@ -17,20 +17,22 @@ async function sleep(time_milliseconds: number): Promise<void> {
  * @param timeout
  * @returns
  */
-function debounce<A, R>(
-    callback: (...args: A[]) => R,
+function debounce<A>(
+    callback: (...args: A[]) => unknown,
     timeout: number = 300,
-): (...args: A[]) => Promise<R> {
+): (...args: A[]) => Promise<void> {
     let timer: NodeJS.Timeout | null = null;
 
-    return (..._arguments: A[]) => {
-        return new Promise<R>((resolve, reject) => {
+    return async (...args: A[]) => {
+        await new Promise<void>((resolve, reject) => {
             if (timer) {
                 clearTimeout(timer);
             }
+            callback(...args);
             timer = setTimeout(() => {
                 try {
-                    resolve(callback(..._arguments));
+                    callback(...args);
+                    resolve();
                 } catch (error) {
                     reject(
                         new Error("Debounce function failed.", {

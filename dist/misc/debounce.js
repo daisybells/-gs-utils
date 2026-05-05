@@ -18,14 +18,16 @@ async function sleep(time_milliseconds) {
  */
 function debounce(callback, timeout = 300) {
     let timer = null;
-    return (..._arguments) => {
-        return new Promise((resolve, reject) => {
+    return async (...args) => {
+        await new Promise((resolve, reject) => {
             if (timer) {
                 clearTimeout(timer);
             }
+            callback(...args);
             timer = setTimeout(() => {
                 try {
-                    resolve(callback(..._arguments));
+                    callback(...args);
+                    resolve();
                 }
                 catch (error) {
                     reject(new Error("Debounce function failed.", {
