@@ -5,8 +5,11 @@ import {
 } from "./console-format/constants.js";
 
 import { clearRegex } from "../string/normalize.js";
-import { makeFormatter } from "./console-format/create-formatter.js";
-import { toColor, decorateString } from "./console-format/create-formatter.js";
+import {
+    makeFormatter,
+    toColor,
+    decorateString,
+} from "./console-format/create-formatter.js";
 import {
     applyFormatting,
     clearString,
@@ -31,7 +34,7 @@ function initializeColorFormatter(): CLIColorFormatter {
         format: makeFormatter,
         toColor,
         decorate: decorateString,
-        clear: clearString,
+        clear: (string: string): string => clearString(string, identifierRegex),
     };
 }
 

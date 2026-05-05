@@ -9,3 +9,5 @@ Thumbs.db
 /node_modules
 /.debug
 pnpm-lock.yaml
+pnpm-workspace.yaml
+eslint.config.js

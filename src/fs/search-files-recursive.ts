@@ -1,89 +1,93 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { SearchFilesRecursiveOptions } from "@/types/fs.js";
-import type { Dirent } from "node:fs";
+import { getRecursiveFileCall } from "./helpers/get-recursive-call.js";
+
+import type {
+    SearchFilesRecursiveOptions,
+    RecursiveFileFrame,
+} from "@/types/fs.js";
 
 async function searchFilesRecursive(
     directory: string,
     options?: Partial<SearchFilesRecursiveOptions>,
 ): Promise<string[]> {
-    const searchOptions: SearchFilesRecursiveOptions = {
+    const {
+        includeDirectories,
+        filter,
+        asRoot,
+        fullPath,
+    }: SearchFilesRecursiveOptions = {
         fullPath: false,
-        filter: null,
+        filter: () => true,
         includeDirectories: false,
         asRoot: false,
         ...(options || {}),
     };
 
-    return searchFilesRecursiveHandler(directory, searchOptions);
-}
+    const callStack: RecursiveFileFrame[] = [
+        await getRecursiveFileCall(directory),
+    ];
 
-async function searchFilesRecursiveHandler(
-    directory: string,
-    options: SearchFilesRecursiveOptions,
-    base: string = directory,
-): Promise<string[]> {
-    const { filter, includeDirectories } = options;
+    const files: string[] = [];
 
-    const entries: Dirent<string>[] = await fs.readdir(directory, {
-        withFileTypes: true,
-    });
-    const filePromises: Promise<string | string[]>[] = entries.map(
-        async (entry: Dirent<string>) => {
-            const fullPath: string = path.join(directory, entry.name);
-            const relativePath: string = path.relative(base, fullPath);
+    const pushFile = async (filepath: string) => {
+        if (filepath === directory) {
+            return;
+        }
 
-            if (!entry.isDirectory()) {
-                return relativePath;
-            }
+        const outputPath = getFilepath(filepath);
 
-            const nextEntry: string[] = await searchFilesRecursiveHandler(
-                fullPath,
-                options,
-                base,
-            );
+        const isIncluded = await filter(outputPath);
+        if (isIncluded) {
+            files.push(outputPath);
+        }
+    };
 
-            return includeDirectories
-                ? [relativePath, ...nextEntry]
-                : nextEntry;
-        },
-    );
-    const allFiles: string[] = (await Promise.all(filePromises)).flat();
+    while (callStack.length > 0) {
+        const frame = callStack.pop();
+        if (!frame) {
+            throw new Error("Impossible state.");
+        }
 
-    const outputFiles = allFiles.map(
-        async (file: string): Promise<null | string> => {
-            const outputPath = makeFilePath(file, options, base);
+        const currentFile = frame.filepath;
 
-            if (!filter || typeof filter !== "function") {
-                return outputPath;
-            }
+        if (!frame.isDirectory) {
+            await pushFile(currentFile);
+            continue;
+        }
 
-            const isIncluded = await filter(outputPath);
-            if (!isIncluded) {
-                return null;
-            }
-            return outputPath;
-        },
-    );
+        if (includeDirectories) {
+            await pushFile(currentFile);
+        }
 
-    return (await Promise.all(outputFiles)).filter((file) => file !== null);
-}
+        const entries = await fs.readdir(currentFile, {
+            withFileTypes: true,
+        });
 
-function makeFilePath(
-    filePath: string,
-    options: SearchFilesRecursiveOptions,
-    base: string = "",
-): string {
-    const { asRoot, fullPath }: SearchFilesRecursiveOptions = options;
+        for (const entry of entries.toReversed()) {
+            const currentPath = path.join(currentFile, entry.name);
+            callStack.push({
+                filepath: currentPath,
+                isDirectory: entry.isDirectory(),
+            });
+        }
+    }
 
-    switch (true) {
-        case fullPath:
-            return path.resolve(base, filePath);
-        case asRoot:
-            return path.join("/", filePath);
-        default:
-            return filePath;
+    return files;
+
+    function getFilepath(filepath: string) {
+        if (fullPath) {
+            return path.resolve(filepath);
+        }
+
+        const relativePath = path.relative(directory, filepath);
+
+        if (asRoot) {
+            return path.join("/", relativePath);
+        }
+
+        return relativePath;
     }
 }
 

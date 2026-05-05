@@ -18,9 +18,9 @@ import type { LogProgressOptions, GenerateMessage } from "@/types/console.js";
  * @param options
  * @returns
  */
-async function logProgress(
-    promises: unknown[],
-    message?: CFormatString | GenerateMessage,
+async function logProgress<T>(
+    promises: Promise<T>[],
+    message?: CFormatString | GenerateMessage<T>,
     options?: Partial<LogProgressOptions>,
 ) {
     const { sync: processSynchronously, throttleRate }: LogProgressOptions = {
@@ -34,12 +34,12 @@ async function logProgress(
 
     const itemsLength: number = promises.length;
 
-    const logMessage: CFormatString | GenerateMessage =
+    const logMessage: CFormatString | GenerateMessage<T> =
         message || `Promise: %04i / %04m\nCompletion: %3.0p%%`;
-    const generate: GenerateMessage = generateMessageCurry(logMessage);
+    const generate = generateMessageCurry(logMessage);
 
     if (!processSynchronously) {
-        const resolvedPromises = promises.map((value: unknown) => {
+        const resolvedPromises = promises.map((value: Promise<T>) => {
             return trackItem(value);
         });
         return Promise.all(resolvedPromises);
@@ -52,7 +52,7 @@ async function logProgress(
     }
     return output;
 
-    async function trackItem(promise: unknown) {
+    async function trackItem(promise: Promise<T>) {
         const result = await promise;
         currentIndex++;
         const now = Date.now();
@@ -65,31 +65,27 @@ async function logProgress(
 
         return result;
     }
-    function updateTerminal(
-        currentValue: unknown,
-        index: number,
-        max: number,
-    ): void {
-        const message: string = `${generate(currentValue, index, max)}\n`;
+    function updateTerminal(currentValue: T, index: number, max: number): void {
+        const outputMessage: string = `${generate(currentValue, index, max)}\n`;
 
         if (lastLineCount > 0) {
             readline.moveCursor(process.stdout, 0, -lastLineCount);
         }
 
         readline.clearScreenDown(process.stdout);
-        process.stdout.write(message);
-        lastLineCount = (message.match(/\n/gu) || []).length;
+        process.stdout.write(outputMessage);
+        lastLineCount = (outputMessage.match(/\n/gu) || []).length;
     }
 }
 
-function generateMessageCurry(
-    input: GenerateMessage | CFormatString,
-): GenerateMessage {
+function generateMessageCurry<T>(
+    input: GenerateMessage<T> | CFormatString,
+): GenerateMessage<T> {
     if (typeof input === "function") {
         return input;
     }
 
-    return (currentValue: unknown, index: number, max: number) => {
+    return (currentValue: T, index: number, max: number) => {
         const formatter = initializeCFormatter({
             i: String(index),
             m: String(max),

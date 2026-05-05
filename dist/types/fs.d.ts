@@ -7,14 +7,20 @@ export type CleanEmptyFoldersOptions = {
     deleteHiddenFiles: boolean;
     /**
      * Filter to include or exclude given folders based on a condition.
-     * @default null
+     * Defaults to automatically return true.
+     * @default undefined
      */
-    filter: FileFilter | null;
+    filter: FileFilter;
     /**
      * Deepest that recursive search will go until returning
      * @default 0
      */
     maxDepth: number;
+    /**
+     * Determines whether to actually delete the files or not.
+     * @default false;
+     */
+    dry: boolean;
 };
 export type SearchFilesRecursiveOptions = {
     /**
@@ -24,9 +30,10 @@ export type SearchFilesRecursiveOptions = {
     fullPath: boolean;
     /**
      * Takes input base path and filters it in or out of the output.
-     * @default null
+     * Defaults to automatically return true.
+     * @default undefined
      */
-    filter: FileFilter | null;
+    filter: FileFilter;
     /**
      * Determines whether to include directories in a search.
      * @default false
@@ -38,6 +45,10 @@ export type SearchFilesRecursiveOptions = {
      */
     asRoot: boolean;
 };
+export type RecursiveFileFrame = {
+    filepath: string;
+    isDirectory: boolean;
+};
 export type CompareFiles = (pathA: string, pathB: string) => boolean | Promise<boolean>;
 export type FilesToCopyData = {
     input: string;
@@ -46,14 +57,14 @@ export type FilesToCopyData = {
 export type SyncDirectoriesOptions = {
     /**
      * Filter which input files are ignored in sync copy process.
-     * @default null returns all files.
+     * @default undefined returns all files.
      */
-    filterInput: FileFilter | null;
+    filterInput: FileFilter;
     /**
      * Filter which output files are ignored in sync deletion process.
-     * @default null makes carbon copy of files.
+     * @default undefined makes carbon copy of files.
      */
-    filterOutput: FileFilter | null;
+    filterOutput: FileFilter;
     /**
      * Determine the metrics in which files are compared to each other.
      * Comperes fs.stats.size by default. Can be async.

@@ -1,4 +1,3 @@
-import type { Promisify } from "../types/misc.js";
 /**
  * Sleep for a given amount of time (ms)
  * @param time_milliseconds
@@ -11,14 +10,14 @@ declare function sleep(time_milliseconds: number): Promise<void>;
  * @param timeout
  * @returns
  */
-declare function debounce<FunctionType extends (...args: any[]) => any>(callback: FunctionType, timeout?: number): Promisify<FunctionType>;
+declare function debounce<A, R>(callback: (...args: A[]) => R, timeout?: number): (...args: A[]) => Promise<R>;
 /**
  * Ensure that only one of one or more functions are running at any given time.
  * @param callbacks
  * @returns
  */
-declare function singleFlight<InputFunctions extends ((...args: any[]) => any)[]>(...callbacks: InputFunctions): {
-    [Index in keyof InputFunctions]: InputFunctions[Index] extends (...args: any[]) => any ? Promisify<InputFunctions[Index]> : never;
+declare function singleFlight<Callbacks extends ((...args: any[]) => unknown)[]>(...callbacks: Callbacks): {
+    [Index in keyof Callbacks]: Callbacks[Index] extends (...args: (infer A)[]) => unknown ? (...args: A[]) => Promise<void> : never;
 };
-declare function throttle<FunctionType extends (...args: any) => void>(callback: FunctionType, delay: number): (...args: Parameters<FunctionType>) => void;
+declare function throttle<P extends unknown[]>(callback: (...args: P) => unknown, delay: number): (...args: P) => void;
 export { sleep, debounce, singleFlight, throttle };

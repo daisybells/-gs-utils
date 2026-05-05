@@ -1,1 +1,0 @@
-{"version":3,"file":"config.js","sourceRoot":"","sources":["../../../src/console/readline-selector/config.ts"],"names":[],"mappings":"AAMA,SAAS,YAAY,CACjB,OAA2B,EAC3B,MAAc,EACd,OAAwC;IAExC,OAAO;QACH,GAAG,OAAO;QACV,OAAO;QACP,MAAM;QACN,UAAU,EAAE,IAAI,CAAC,IAAI,CAAC,OAAO,CAAC,MAAM,GAAG,OAAO,CAAC,gBAAgB,CAAC;KACnE,CAAC;AACN,CAAC;AAED,OAAO,EAAE,YAAY,EAAE,CAAC"}

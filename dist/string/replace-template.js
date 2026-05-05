@@ -17,4 +17,3 @@ function replaceTemplate(inputString, replacer) {
     });
 }
 export { replaceTemplate };
-//# sourceMappingURL=replace-template.js.map

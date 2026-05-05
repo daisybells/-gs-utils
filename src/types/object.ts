@@ -9,7 +9,7 @@ export type EqeqeqOptions = {
      * Determines whether order matters or not in arrays.
      * @default false
      */
-    sort_arrays: false;
+    sort_arrays: boolean;
 };
 
 // SORT BY FREQUENCY

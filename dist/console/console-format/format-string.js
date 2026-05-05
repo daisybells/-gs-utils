@@ -44,4 +44,3 @@ function transformMatch(match, ignored, specifiers, pointer) {
     }
 }
 export { transformMatch, applyFormatting, clearString };
-//# sourceMappingURL=format-string.js.map

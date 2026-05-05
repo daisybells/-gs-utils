@@ -20,4 +20,3 @@ function initializeIndexPage(config) {
     return indexPage;
 }
 export { initializeIndexPage };
-//# sourceMappingURL=index-page.js.map

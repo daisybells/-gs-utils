@@ -30,4 +30,3 @@ function clearRegex(string) {
     return string.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 export { normalizeString, clearRegex };
-//# sourceMappingURL=normalize.js.map

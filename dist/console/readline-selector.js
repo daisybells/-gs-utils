@@ -68,4 +68,3 @@ function createSelectorInterface(input, output, options) {
     }
 }
 export { createSelectorInterface };
-//# sourceMappingURL=readline-selector.js.map

@@ -21,4 +21,3 @@ function createColorEscape(colorCodes) {
     return addEscapeToCode(escapeSequence);
 }
 export { addEscapeToCode, addEscapesToString, createColorEscape, getResetEscape, };
-//# sourceMappingURL=generators.js.map

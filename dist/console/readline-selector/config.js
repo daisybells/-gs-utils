@@ -7,4 +7,3 @@ function defineConfig(entries, prompt, options) {
     };
 }
 export { defineConfig };
-//# sourceMappingURL=config.js.map

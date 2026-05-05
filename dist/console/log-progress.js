@@ -49,13 +49,13 @@ async function logProgress(promises, message, options) {
         return result;
     }
     function updateTerminal(currentValue, index, max) {
-        const message = `${generate(currentValue, index, max)}\n`;
+        const outputMessage = `${generate(currentValue, index, max)}\n`;
         if (lastLineCount > 0) {
             readline.moveCursor(process.stdout, 0, -lastLineCount);
         }
         readline.clearScreenDown(process.stdout);
-        process.stdout.write(message);
-        lastLineCount = (message.match(/\n/gu) || []).length;
+        process.stdout.write(outputMessage);
+        lastLineCount = (outputMessage.match(/\n/gu) || []).length;
     }
 }
 function generateMessageCurry(input) {
@@ -73,4 +73,3 @@ function generateMessageCurry(input) {
     };
 }
 export { logProgress };
-//# sourceMappingURL=log-progress.js.map

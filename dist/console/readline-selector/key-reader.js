@@ -13,7 +13,7 @@ function createKeyMap(directionMap) {
     return keyMap;
 }
 function isInMap(key, map) {
-    return key in map;
+    return Object.hasOwn(map, key);
 }
 function normalizeKey(key) {
     const JOIN_CHARACTER = ",";
@@ -28,4 +28,3 @@ function normalizeKey(key) {
     }
 }
 export { createKeyMap, normalizeKey };
-//# sourceMappingURL=key-reader.js.map

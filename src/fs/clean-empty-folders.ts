@@ -1,10 +1,20 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import type { Dirent } from "node:fs";
-import type { CleanEmptyFoldersOptions } from "@/types/fs.js";
+import { getRecursiveFileCall } from "./helpers/get-recursive-call.js";
+
+import type {
+    CleanEmptyFoldersOptions,
+    RecursiveFileFrame,
+} from "@/types/fs.js";
 
 const HIDDEN_FILES_SET: Set<string> = new Set([".DS_Store", "Desktop.ini"]);
+
+type CleanEmptyFolderFrame = RecursiveFileFrame & {
+    visited: boolean;
+    parent: CleanEmptyFolderFrame | null;
+    size: number;
+};
 
 /**
  * Remove empty folders from a given directory.
@@ -15,85 +25,100 @@ async function cleanEmptyFolders(
     directory: string,
     options?: Partial<CleanEmptyFoldersOptions>,
 ): Promise<void> {
-    const cleanEmptyOptions: CleanEmptyFoldersOptions = {
+    const {
+        deleteHiddenFiles,
+        filter,
+        maxDepth,
+        dry,
+    }: CleanEmptyFoldersOptions = {
         deleteHiddenFiles: true,
-        filter: null,
+        filter: () => true,
         maxDepth: 0,
+        dry: false,
         ...(options || {}),
     };
-    await cleanEmptyFoldersHandler(directory, cleanEmptyOptions);
-}
-async function cleanEmptyFoldersHandler(
-    directory: string,
-    options: CleanEmptyFoldersOptions,
-    depth: number = 0,
-) {
-    const { deleteHiddenFiles, filter, maxDepth }: CleanEmptyFoldersOptions =
-        options;
-    if (maxDepth > 0 && depth > maxDepth) {
-        console.log(`rmdir: '${directory}' skipped -> Max depth reached.`);
-        return false;
-    }
+    const firstCall: CleanEmptyFolderFrame = {
+        parent: null,
+        size: -1,
+        visited: false,
+        ...(await getRecursiveFileCall(directory)),
+    };
 
-    const isIncluded: boolean =
-        typeof filter === "function" ? await filter(directory) : true;
+    const callStack: CleanEmptyFolderFrame[] = [firstCall];
 
-    if (depth > 0 && !isIncluded) {
-        return false;
-    }
+    while (callStack.length > 0) {
+        const frame = callStack.at(-1) as CleanEmptyFolderFrame;
 
-    const entries: Dirent<string>[] = await fs.readdir(directory, {
-        withFileTypes: true,
-    });
-
-    const removePromises: Promise<Dirent<string> | null>[] = entries.map(
-        async (file: Dirent<string>) => {
-            const fullPath: string = path.join(directory, file.name);
-            if (!file.isDirectory()) {
-                return file;
-            }
-
-            const isDeleted: boolean = await cleanEmptyFoldersHandler(
-                fullPath,
-                options,
-                depth + 1,
+        const isMaxDepthReached = maxDepth > 0 && callStack.length > maxDepth;
+        if (isMaxDepthReached) {
+            console.log(
+                `rmdir: '${frame.filepath}' Skipped --> Max depth reached.`,
             );
-            if (isDeleted) {
-                return null;
+            callStack.pop();
+            continue;
+        }
+
+        const currentFile = frame.filepath;
+
+        if (!frame.isDirectory) {
+            const shouldBeDeleted =
+                deleteHiddenFiles &&
+                HIDDEN_FILES_SET.has(path.basename(currentFile));
+
+            if (shouldBeDeleted) {
+                await deleteFile(frame);
             }
-            return file;
-        },
-    );
 
-    const remainingFiles: Dirent<string>[] = (
-        await Promise.all(removePromises)
-    ).filter((file): file is Dirent<string> => {
-        return Boolean(file);
-    });
+            callStack.pop();
+            continue;
+        }
 
-    const workingFiles: Dirent<string>[] = deleteHiddenFiles
-        ? remainingFiles.filter((file) => {
-              return !HIDDEN_FILES_SET.has(file.name);
-          })
-        : remainingFiles;
+        const entries = await fs.readdir(currentFile, { withFileTypes: true });
 
-    if (workingFiles.length > 0 || depth === 0) {
-        return false;
+        if (!frame.visited) {
+            frame.size = entries.length;
+        } else {
+            if (frame.size === 0) {
+                await deleteFile(frame);
+            }
+            callStack.pop();
+            continue;
+        }
+        frame.visited = true;
+
+        for (const entry of entries.toReversed()) {
+            callStack.push({
+                filepath: path.join(currentFile, entry.name),
+                isDirectory: entry.isDirectory(),
+                visited: false,
+                size: -1,
+                parent: frame,
+            });
+        }
     }
 
-    await Promise.all(
-        workingFiles.map(async (file) => {
-            if (!file) {
-                return;
-            }
-            const fullPath = path.join(directory, file.name);
-            await fs.rm(fullPath);
-        }),
-    );
-    console.log(`rmdir: ${directory}`);
+    async function deleteFile(frame: CleanEmptyFolderFrame) {
+        const isIncluded = await filter(frame.filepath);
 
-    await fs.rmdir(directory);
-    return true;
+        if (!isIncluded) {
+            return;
+        }
+
+        if (!dry) {
+            if (frame.isDirectory) {
+                await fs.rmdir(frame.filepath);
+            } else {
+                await fs.rm(frame.filepath);
+            }
+        }
+        console.log(`${frame.isDirectory ? "rmdir" : "rm"}: ${frame.filepath}`);
+
+        if (!frame.parent) {
+            return;
+        }
+
+        frame.parent.size -= 1;
+    }
 }
 
 export { cleanEmptyFolders };

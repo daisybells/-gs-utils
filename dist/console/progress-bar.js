@@ -16,4 +16,3 @@ function createProgressBarGenerator(width = 20, options) {
     };
 }
 export { createProgressBarGenerator };
-//# sourceMappingURL=progress-bar.js.map

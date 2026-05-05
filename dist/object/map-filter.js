@@ -14,4 +14,3 @@ function mapFilter(array, callback) {
     }, []);
 }
 export { mapFilter };
-//# sourceMappingURL=map-filter.js.map

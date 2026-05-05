@@ -1,16 +1,14 @@
-import type { Promisify } from "@/types/misc.js";
-
 /**
  * Sleep for a given amount of time (ms)
  * @param time_milliseconds
  * @returns
  */
-function sleep(time_milliseconds: number): Promise<void> {
-    return new Promise((resolve) =>
+async function sleep(time_milliseconds: number): Promise<void> {
+    await new Promise<void>((resolve) => {
         setTimeout(() => {
             resolve();
-        }, time_milliseconds),
-    );
+        }, time_milliseconds);
+    });
 }
 
 /**
@@ -19,14 +17,14 @@ function sleep(time_milliseconds: number): Promise<void> {
  * @param timeout
  * @returns
  */
-function debounce<FunctionType extends (...args: any[]) => any>(
-    callback: FunctionType,
+function debounce<A, R>(
+    callback: (...args: A[]) => R,
     timeout: number = 300,
-): Promisify<FunctionType> {
+): (...args: A[]) => Promise<R> {
     let timer: NodeJS.Timeout | null = null;
 
-    return ((..._arguments: Parameters<FunctionType>) => {
-        return new Promise((resolve, reject) => {
+    return (..._arguments: A[]) => {
+        return new Promise<R>((resolve, reject) => {
             if (timer) {
                 clearTimeout(timer);
             }
@@ -34,11 +32,15 @@ function debounce<FunctionType extends (...args: any[]) => any>(
                 try {
                     resolve(callback(..._arguments));
                 } catch (error) {
-                    reject(error);
+                    reject(
+                        new Error("Debounce function failed.", {
+                            cause: error,
+                        }),
+                    );
                 }
             }, timeout);
         });
-    }) as Promisify<FunctionType>;
+    };
 }
 
 /**
@@ -46,51 +48,59 @@ function debounce<FunctionType extends (...args: any[]) => any>(
  * @param callbacks
  * @returns
  */
-function singleFlight<InputFunctions extends ((...args: any[]) => any)[]>(
-    ...callbacks: InputFunctions
+function singleFlight<Callbacks extends ((...args: any[]) => unknown)[]>(
+    ...callbacks: Callbacks
 ): {
-    [Index in keyof InputFunctions]: InputFunctions[Index] extends (
-        ...args: any[]
-    ) => any
-        ? Promisify<InputFunctions[Index]>
+    [Index in keyof Callbacks]: Callbacks[Index] extends (
+        ...args: (infer A)[]
+    ) => unknown
+        ? (...args: A[]) => Promise<void>
         : never;
 } {
     let isRunning: boolean = false;
 
-    return callbacks.map((callback) => singleFlightHandler(callback)) as any;
+    return callbacks.map((callback) => singleFlightHandler(callback)) as never;
 
-    function singleFlightHandler(callback: (...args: any[]) => any) {
-        let lastResult: unknown = null;
-        return async (...arguments_: any[]) => {
+    function singleFlightHandler<ArgType>(
+        callback: (...args: ArgType[]) => unknown,
+    ): (...args: ArgType[]) => Promise<void> {
+        return async (...args: ArgType[]) => {
             if (isRunning) {
-                return lastResult;
+                return;
             }
             isRunning = true;
 
             try {
-                lastResult = await callback(...arguments_);
+                await callback(...args);
             } finally {
-                if (isRunning === true) isRunning = false;
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                if (isRunning) {
+                    isRunning = false;
+                }
             }
-            return lastResult;
         };
     }
 }
 
-function throttle<FunctionType extends (...args: any) => void>(
-    callback: FunctionType,
+function throttle<P extends unknown[]>(
+    callback: (...args: P) => unknown,
     delay: number,
-): (...args: Parameters<FunctionType>) => void {
-    const queue: Parameters<FunctionType>[] = [];
+): (...args: P) => void {
+    const callStack: P[] = [];
+
     let isRunning: boolean = false;
 
     const processQueue = () => {
-        if (isRunning || queue.length === 0) {
+        if (isRunning || callStack.length === 0) {
             return;
         }
 
         isRunning = true;
-        const args: Parameters<FunctionType> | never[] = queue.shift() || [];
+        const args: P | undefined = callStack.shift();
+
+        if (!args) {
+            return;
+        }
 
         callback(...args);
 
@@ -99,8 +109,8 @@ function throttle<FunctionType extends (...args: any) => void>(
             processQueue();
         }, delay);
     };
-    return (...args: Parameters<FunctionType>) => {
-        queue.push(args || []);
+    return (...args: P) => {
+        callStack.push(args);
         processQueue();
     };
 }

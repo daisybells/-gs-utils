@@ -21,8 +21,8 @@ export type CreateProgressBarGeneratorOptions = {
 /**
  * Callback to manually build message without C formatter.
  */
-export type GenerateMessage = (
-    currentValue: any,
+export type GenerateMessage<T> = (
+    currentValue: T,
     index: number,
     max: number,
 ) => string;

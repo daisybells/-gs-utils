@@ -12,12 +12,10 @@ import { createProgressBarGenerator } from "../console/progress-bar.js";
  * @param options
  */
 async function syncDirectories(inputDirectory, outputDirectory, options) {
-    console.log("Starting directory sync...\n");
-    console.log(`Source: ${inputDirectory}`);
-    console.log(`Destination: ${outputDirectory}`);
+    console.log(`Starting directory sync...\nSource: ${inputDirectory}\nDestination: ${outputDirectory}`);
     const { filterInput, filterOutput, compare, cleanDirectory, cleanEmpty, logProgress: doLogProgress, } = {
-        filterInput: null,
-        filterOutput: null,
+        filterInput: () => true,
+        filterOutput: () => true,
         compare: filesAreSameSize,
         cleanDirectory: true,
         cleanEmpty: true,
@@ -55,7 +53,7 @@ async function syncDirectories(inputDirectory, outputDirectory, options) {
     if (filesToCopy.length > 0) {
         const inputFileSize = inputFiles.length;
         const existingPaths = inputFileSize - copyFilesSize;
-        console.log(`${existingPaths} file(s) exist(s) in output directory. Copying the remaining ${copyFilesSize} file(s)...\n`);
+        console.log(`${String(existingPaths)} file(s) exist(s) in output directory. Copying the remaining ${String(copyFilesSize)} file(s)...\n`);
         await copyAllFiles(doLogProgress)(filesToCopy);
         console.log("\nAll files copied!");
     }
@@ -68,7 +66,9 @@ async function syncDirectories(inputDirectory, outputDirectory, options) {
     }
     if (cleanEmpty) {
         console.log("Cleaning empty folders...");
-        await cleanEmptyFolders(outputDirectory);
+        await cleanEmptyFolders(outputDirectory, {
+            filter: (file) => filterOutput(path.relative(outputDirectory, file)),
+        });
     }
     console.log("\nDone.");
 }
@@ -84,7 +84,7 @@ function deleteRemainingFiles(inputFilesSet, outputDirectory) {
             removedFiles++;
         });
         await Promise.all(removeFilesPromises);
-        console.log(`Removed ${removedFiles} files.`);
+        console.log(`Removed ${String(removedFiles)} files.`);
     };
 }
 function copyAllFiles(doLogProgress) {
@@ -128,8 +128,7 @@ function createLogMessage(createProgressBar) {
         const decimalPercentage = index / max;
         const progressBar = createProgressBar(decimalPercentage);
         const outputPercentage = Math.floor(decimalPercentage * 100);
-        return `Copying file ${index} of ${max}\nCurrent file: ${currentFile}\n${progressBar} ${outputPercentage}%`;
+        return `Copying file ${String(index)} of ${String(max)}\nCurrent file: ${currentFile}\n${progressBar} ${String(outputPercentage)}%`;
     };
 }
 export { syncDirectories };
-//# sourceMappingURL=sync-directories.js.map

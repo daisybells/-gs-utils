@@ -9,14 +9,19 @@ function sortAlphabetical(array, callback) {
     return array.sort((a, b) => {
         const aValue = hasCallback ? callback(a) : a;
         const bValue = hasCallback ? callback(b) : b;
-        if (aValue < bValue) {
-            return -1;
+        if (typeof aValue === "string" && typeof bValue === "string") {
+            if (aValue < bValue) {
+                return -1;
+            }
+            if (aValue > bValue) {
+                return 1;
+            }
+            return 0;
         }
-        if (aValue > bValue) {
-            return 1;
+        if (typeof aValue === "number" && typeof bValue === "number") {
+            return aValue - bValue;
         }
-        return 0;
+        return 1;
     });
 }
 export { sortAlphabetical };
-//# sourceMappingURL=sort-alphabetical.js.map

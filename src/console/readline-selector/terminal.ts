@@ -26,7 +26,7 @@ function initializeTerminalOutputMethods(output: NodeJS.WriteStream) {
 
 function initializeTerminalInputMethods(input: NodeJS.ReadStream) {
     let isRunning: boolean = false;
-    let interact: (key: string) => void = () => {};
+    let interact: (key: string) => void;
 
     function createInterface(listener?: (key: string) => void): void {
         if (isRunning) {
@@ -37,13 +37,13 @@ function initializeTerminalInputMethods(input: NodeJS.ReadStream) {
         input.setEncoding("utf8");
         input.resume();
 
-        interact = (key: string) => {
-            if (key.toString() === "\u0003") {
+        interact = (key: unknown) => {
+            if (String(key) === "\u0003") {
                 console.log("\nTermination signal received. Exiting proces...");
                 process.exit();
             }
             if (listener) {
-                listener(key);
+                listener(String(key));
             }
         };
 

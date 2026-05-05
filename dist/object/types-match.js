@@ -55,4 +55,3 @@ function typesMatch(base, data) {
     });
 }
 export { typesMatch };
-//# sourceMappingURL=types-match.js.map

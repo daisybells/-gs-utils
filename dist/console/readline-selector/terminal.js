@@ -21,7 +21,7 @@ function initializeTerminalOutputMethods(output) {
 }
 function initializeTerminalInputMethods(input) {
     let isRunning = false;
-    let interact = () => { };
+    let interact;
     function createInterface(listener) {
         if (isRunning) {
             return;
@@ -31,12 +31,12 @@ function initializeTerminalInputMethods(input) {
         input.setEncoding("utf8");
         input.resume();
         interact = (key) => {
-            if (key.toString() === "\u0003") {
+            if (String(key) === "\u0003") {
                 console.log("\nTermination signal received. Exiting proces...");
                 process.exit();
             }
             if (listener) {
-                listener(key);
+                listener(String(key));
             }
         };
         input.on("data", interact);
@@ -52,4 +52,3 @@ function initializeTerminalInputMethods(input) {
     return { createInterface, closeInterface };
 }
 export { initializeTerminalInputMethods, initializeTerminalOutputMethods };
-//# sourceMappingURL=terminal.js.map

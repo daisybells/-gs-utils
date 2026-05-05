@@ -2,94 +2,86 @@ import type { EqeqeqOptions } from "../types/object.js";
 
 /**
  * Deep comparison of two javascript objects or arrays.
- * @param inputA
- * @param inputB
+ * @param a
+ * @param b
  * @param options
  * @returns
  */
 function eqeqeq(
-    inputA: unknown,
-    inputB: unknown,
+    a: unknown,
+    b: unknown,
     options?: Partial<EqeqeqOptions>,
 ): boolean {
-    const eqOptions: EqeqeqOptions = {
+    const { max_depth, sort_arrays }: EqeqeqOptions = {
         max_depth: 0,
         sort_arrays: false,
         ...(options || {}),
     };
 
-    return eqeqeqHandler(inputA, inputB, eqOptions);
-}
-function eqeqeqHandler(
-    inputA: unknown,
-    inputB: unknown,
-    options: EqeqeqOptions,
-    depth: number = 0,
-): boolean {
-    const { max_depth } = options;
-    const nextDepth: number = depth + 1;
-    const isBeyondMaxDepth: boolean = max_depth > 0 && depth > max_depth;
+    const firstCall: [unknown, unknown] = [a, b];
+    const callStack: [unknown, unknown][] = [firstCall];
 
-    switch (true) {
-        case isBeyondMaxDepth:
-            throw new Error("Error: max depth reached on eqeqeq.");
-        case typeof inputA !== "object" ||
-            typeof inputB !== "object" ||
-            inputA === null ||
-            inputB === null:
-            return inputA === inputB;
-        case Array.isArray(inputA) && Array.isArray(inputB):
-            return arraysEqual(inputA, inputB, options, nextDepth);
-        default:
-            return objectsEqual(inputA, inputB, options, nextDepth);
-    }
-}
+    let isEqual: boolean = true;
 
-function arraysEqual(
-    arrayA: unknown[],
-    arrayB: unknown[],
-    options: EqeqeqOptions,
-    depth: number,
-) {
-    if (!Array.isArray(arrayA) || !Array.isArray(arrayB)) {
-        throw new Error("Only arrays accepted as input.");
-    }
-    const { sort_arrays }: EqeqeqOptions = options;
+    while (callStack.length > 0) {
+        const [aFrame, bFrame] = callStack.pop() as [unknown, unknown];
 
-    if (arrayA.length !== arrayB.length) {
-        return false;
-    }
-    const aSorted = sort_arrays ? arrayA.toSorted() : arrayA;
-    const bSorted = sort_arrays ? arrayB.toSorted() : arrayB;
-    return aSorted.every((value, index) =>
-        eqeqeqHandler(value, bSorted[index], options, depth),
-    );
-}
-function objectsEqual(
-    objectA: object,
-    objectB: object,
-    options: EqeqeqOptions,
-    depth: number,
-): boolean {
-    if (!isNonArrayObject(objectA) || !isNonArrayObject(objectB)) {
-        throw new Error("Only non-array objects accepted as input.");
-    }
+        if (max_depth > 0 && callStack.length > max_depth) {
+            console.warn("eqeqeq: ERROR - MAX DEPTH REACHED");
+            isEqual = false;
+            continue;
+        }
 
-    const entriesA = Object.entries(objectA);
-    const keysB = Object.keys(objectB);
-    if (entriesA.length !== keysB.length) {
-        return false;
-    }
+        if (!isEqual) {
+            break;
+        }
 
-    const objectsAreSame: boolean = entriesA.every(([key, value]) => {
-        return eqeqeqHandler(
-            value,
-            (objectB as Record<string, unknown>)[key],
-            options,
-            depth,
-        );
-    });
-    return objectsAreSame;
+        if (!isObject(aFrame) || !isObject(bFrame)) {
+            isEqual = aFrame === bFrame;
+            continue;
+        }
+        const aIsArray = Array.isArray(aFrame);
+        const bIsArray = Array.isArray(bFrame);
+        if (aIsArray !== bIsArray) {
+            isEqual = false;
+            continue;
+        }
+
+        if (aIsArray && bIsArray) {
+            if (aFrame.length !== bFrame.length) {
+                isEqual = false;
+                continue;
+            }
+            const aSorted = sort_arrays ? aFrame.toSorted() : aFrame;
+            const bSorted = sort_arrays ? bFrame.toSorted() : bFrame;
+            for (let i = aSorted.length - 1; i >= 0; i--) {
+                const aElement: unknown = aSorted[i];
+                const bElement: unknown = bSorted[i];
+
+                callStack.push([aElement, bElement]);
+            }
+
+            continue;
+        }
+
+        const entriesA = Object.entries(aFrame);
+        const entriesB = Object.entries(bFrame);
+        if (entriesA.length !== entriesB.length) {
+            isEqual = false;
+            break;
+        }
+
+        for (const entryA of entriesA) {
+            const [key, value] = entryA as [string, unknown];
+            if (!Object.hasOwn(bFrame, key)) {
+                isEqual = false;
+                break;
+            }
+
+            callStack.push([value, (bFrame as Record<string, unknown>)[key]]);
+        }
+    }
+    return isEqual;
 }
 
 function isNonArrayObject(data: unknown): data is object {

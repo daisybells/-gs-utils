@@ -17,7 +17,7 @@ export type CreateProgressBarGeneratorOptions = {
 /**
  * Callback to manually build message without C formatter.
  */
-export type GenerateMessage = (currentValue: any, index: number, max: number) => string;
+export type GenerateMessage<T> = (currentValue: T, index: number, max: number) => string;
 export type LogProgressOptions = {
     /**
      * Process promises synchronously (true) or asynchronously (false).

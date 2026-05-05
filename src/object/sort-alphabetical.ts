@@ -6,20 +6,27 @@
  */
 function sortAlphabetical<ElementType>(
     array: ElementType[],
-    callback?: (value: ElementType) => string,
+    callback?: (value: ElementType) => unknown,
 ): ElementType[] {
     const hasCallback = typeof callback === "function";
     return array.sort((a, b) => {
-        const aValue: any = hasCallback ? callback(a) : a;
-        const bValue: any = hasCallback ? callback(b) : b;
+        const aValue: unknown = hasCallback ? callback(a) : a;
+        const bValue: unknown = hasCallback ? callback(b) : b;
 
-        if (aValue < bValue) {
-            return -1;
+        if (typeof aValue === "string" && typeof bValue === "string") {
+            if (aValue < bValue) {
+                return -1;
+            }
+            if (aValue > bValue) {
+                return 1;
+            }
+            return 0;
         }
-        if (aValue > bValue) {
-            return 1;
+        if (typeof aValue === "number" && typeof bValue === "number") {
+            return aValue - bValue;
         }
-        return 0;
+
+        return 1;
     });
 }
 export { sortAlphabetical };

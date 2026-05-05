@@ -14,5 +14,5 @@ import type { LogProgressOptions, GenerateMessage } from "../types/console.js";
  * @param options
  * @returns
  */
-declare function logProgress(promises: unknown[], message?: CFormatString | GenerateMessage, options?: Partial<LogProgressOptions>): Promise<unknown[]>;
+declare function logProgress<T>(promises: Promise<T>[], message?: CFormatString | GenerateMessage<T>, options?: Partial<LogProgressOptions>): Promise<Awaited<T>[]>;
 export { logProgress };

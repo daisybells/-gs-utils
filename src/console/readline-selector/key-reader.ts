@@ -9,7 +9,7 @@ import type {
 function createKeyMap(directionMap: DirectionMap): KeyMap {
     const keyMap: Map<string, MoveDirection> = new Map();
 
-    const entries: [string | keyof DirectionMap, DirectionMapEntry[]][] =
+    const entries: [string, DirectionMapEntry[]][] =
         Object.entries(directionMap);
 
     for (const [direction, keys] of entries) {
@@ -24,13 +24,13 @@ function createKeyMap(directionMap: DirectionMap): KeyMap {
 }
 
 function isInMap<T, K extends { [key: string]: T }>(
-    key: any,
+    key: string | number | symbol,
     map: K,
 ): key is keyof K {
-    return key in map;
+    return Object.hasOwn(map, key);
 }
 
-function normalizeKey(key: DirectionMapEntry): any {
+function normalizeKey(key: DirectionMapEntry): string {
     const JOIN_CHARACTER = ",";
     if (Array.isArray(key)) {
         return key.join(JOIN_CHARACTER);

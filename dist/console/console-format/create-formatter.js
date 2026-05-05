@@ -23,4 +23,3 @@ function toColor(string, ..._arguments) {
     return addEscapesToString(string, escapeSequence);
 }
 export { makeFormatter, decorateString, toColor };
-//# sourceMappingURL=create-formatter.js.map

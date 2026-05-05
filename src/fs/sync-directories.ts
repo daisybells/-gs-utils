@@ -20,9 +20,9 @@ async function syncDirectories(
     outputDirectory: string,
     options?: Partial<SyncDirectoriesOptions>,
 ) {
-    console.log("Starting directory sync...\n");
-    console.log(`Source: ${inputDirectory}`);
-    console.log(`Destination: ${outputDirectory}`);
+    console.log(
+        `Starting directory sync...\nSource: ${inputDirectory}\nDestination: ${outputDirectory}`,
+    );
 
     const {
         filterInput,
@@ -32,8 +32,8 @@ async function syncDirectories(
         cleanEmpty,
         logProgress: doLogProgress,
     }: SyncDirectoriesOptions = {
-        filterInput: null,
-        filterOutput: null,
+        filterInput: () => true,
+        filterOutput: () => true,
         compare: filesAreSameSize,
         cleanDirectory: true,
         cleanEmpty: true,
@@ -87,7 +87,7 @@ async function syncDirectories(
         const inputFileSize: number = inputFiles.length;
         const existingPaths: number = inputFileSize - copyFilesSize;
         console.log(
-            `${existingPaths} file(s) exist(s) in output directory. Copying the remaining ${copyFilesSize} file(s)...\n`,
+            `${String(existingPaths)} file(s) exist(s) in output directory. Copying the remaining ${String(copyFilesSize)} file(s)...\n`,
         );
         await copyAllFiles(doLogProgress)(filesToCopy);
         console.log("\nAll files copied!");
@@ -102,7 +102,10 @@ async function syncDirectories(
 
     if (cleanEmpty) {
         console.log("Cleaning empty folders...");
-        await cleanEmptyFolders(outputDirectory);
+        await cleanEmptyFolders(outputDirectory, {
+            filter: (file) =>
+                filterOutput(path.relative(outputDirectory, file)),
+        });
     }
 
     console.log("\nDone.");
@@ -125,7 +128,7 @@ function deleteRemainingFiles(
             },
         );
         await Promise.all(removeFilesPromises);
-        console.log(`Removed ${removedFiles} files.`);
+        console.log(`Removed ${String(removedFiles)} files.`);
     };
 }
 
@@ -181,12 +184,12 @@ async function filesAreSameSize(filePathA: string, filePathB: string) {
 
 function createLogMessage(
     createProgressBar: ProgressBarGenerator,
-): GenerateMessage {
+): GenerateMessage<string> {
     return (currentFile: string, index: number, max: number) => {
         const decimalPercentage = index / max;
         const progressBar = createProgressBar(decimalPercentage);
         const outputPercentage = Math.floor(decimalPercentage * 100);
-        return `Copying file ${index} of ${max}\nCurrent file: ${currentFile}\n${progressBar} ${outputPercentage}%`;
+        return `Copying file ${String(index)} of ${String(max)}\nCurrent file: ${currentFile}\n${progressBar} ${String(outputPercentage)}%`;
     };
 }
 

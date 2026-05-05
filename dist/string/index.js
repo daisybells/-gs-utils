@@ -4,4 +4,3 @@ export * from "./clear-white-space.js";
 export * from "./basic.js";
 export * from "./c-format.js";
 export * from "./replace-template.js";
-//# sourceMappingURL=index.js.map

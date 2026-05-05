@@ -19,7 +19,7 @@
         "moduleResolution": "nodenext",
         "rootDir": "./src",
         "outDir": "./dist",
-        "sourceMap": true,
+        "sourceMap": false,
         "lib": ["esnext"],
         "declaration": true,
 

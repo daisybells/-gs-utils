@@ -4,5 +4,5 @@
  * @param callback Callback strings nested in objects.
  * @returns
  */
-declare function sortAlphabetical<ElementType>(array: ElementType[], callback?: (value: ElementType) => string): ElementType[];
+declare function sortAlphabetical<ElementType>(array: ElementType[], callback?: (value: ElementType) => unknown): ElementType[];
 export { sortAlphabetical };

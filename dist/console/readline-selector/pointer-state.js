@@ -46,4 +46,3 @@ function initializeStateMethods(config) {
     return { movePointer, pointerTo, getCurrentState, returnPointerIndex };
 }
 export { initializeStateMethods };
-//# sourceMappingURL=pointer-state.js.map

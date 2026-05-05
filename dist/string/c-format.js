@@ -40,23 +40,22 @@ function formatNumber(inputNumber, minLengthSpecifier, orderSpecifier) {
     return formatMinLength(formatOrder(inputNumber, orderSpecifier), minLengthSpecifier);
 }
 function formatMinLength(inputNumber, minLengthSpecifier) {
-    if (minLengthSpecifier === undefined) {
-        return String(inputNumber);
+    if (!minLengthSpecifier) {
+        return inputNumber;
     }
     const padCharacterMatch = minLengthSpecifier.match(/^[^1-9]/u);
     const padCharacter = padCharacterMatch ? padCharacterMatch[0] : " ";
     const minLength = padCharacterMatch
-        ? Number.parseInt(minLengthSpecifier.slice(1))
-        : Number.parseInt(minLengthSpecifier);
-    return String(inputNumber).padStart(minLength, padCharacter);
+        ? Number.parseInt(minLengthSpecifier.slice(1), 10)
+        : Number.parseInt(minLengthSpecifier, 10);
+    return inputNumber.padStart(minLength, padCharacter);
 }
 function formatOrder(inputNumber, orderSpecifier) {
-    if (orderSpecifier === undefined) {
+    if (!orderSpecifier) {
         return inputNumber;
     }
-    const order = Number.parseInt(orderSpecifier);
+    const order = Number.parseInt(orderSpecifier, 10);
     const input = Number.parseFloat(inputNumber);
-    return String(input.toFixed(order));
+    return input.toFixed(order);
 }
 export { initializeCFormatter };
-//# sourceMappingURL=c-format.js.map

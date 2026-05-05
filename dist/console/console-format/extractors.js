@@ -42,4 +42,3 @@ function reduceDecorationCodes(specifiersArray) {
     }, []);
 }
 export { reduceEscapeCodes, reduceDecorationCodes, trackEscapeCode };
-//# sourceMappingURL=extractors.js.map

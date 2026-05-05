@@ -1,7 +1,6 @@
 import { POINTERS, SPLIT_CHARACTER, IGNORE_CHARACTER, } from "./console-format/constants.js";
 import { clearRegex } from "../string/normalize.js";
-import { makeFormatter } from "./console-format/create-formatter.js";
-import { toColor, decorateString } from "./console-format/create-formatter.js";
+import { makeFormatter, toColor, decorateString, } from "./console-format/create-formatter.js";
 import { applyFormatting, clearString, } from "./console-format/format-string.js";
 function initializeColorFormatter() {
     const identifierRegex = createIdentifierRegex({
@@ -14,7 +13,7 @@ function initializeColorFormatter() {
         format: makeFormatter,
         toColor,
         decorate: decorateString,
-        clear: clearString,
+        clear: (string) => clearString(string, identifierRegex),
     };
 }
 function createIdentifierRegex(options) {
@@ -28,4 +27,3 @@ function createIdentifierRegex(options) {
     return new RegExp(colorIdentifiersRegexString, "gu");
 }
 export { initializeColorFormatter };
-//# sourceMappingURL=console-format.js.map

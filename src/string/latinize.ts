@@ -831,7 +831,7 @@ const latin_map: { [key: string]: string } = {
  * @returns
  */
 function latinize(string: string): string {
-    return string.replace(/[^A-Za-z0-9\[\] ]/gu, (a) => {
+    return string.replaceAll(/[^A-Za-z0-9[\] ]/gu, (a) => {
         return latin_map[a] || a;
     });
 }

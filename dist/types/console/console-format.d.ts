@@ -25,9 +25,9 @@ export type ColorCode = PrimaryCode | BrightnessCode | FgBgCode;
 export type CLIColorFormatter = {
     apply: (string: string) => ColoredCLIString;
     format: (string: string) => StringFormatter;
-    toColor: any;
-    decorate: any;
-    clear: any;
+    toColor: (string: string, ...args: ColorCode[]) => ColoredCLIString;
+    decorate: (string: string, ...decorations: DecorationCode[]) => ColoredCLIString;
+    clear: (string: ColoredCLIString) => string;
 };
 export type StringFormatter = {
     toColor: (...args: ColorCode[]) => StringFormatter;

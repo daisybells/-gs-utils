@@ -830,9 +830,8 @@ const latin_map = {
  * @returns
  */
 function latinize(string) {
-    return string.replace(/[^A-Za-z0-9\[\] ]/gu, (a) => {
+    return string.replaceAll(/[^A-Za-z0-9[\] ]/gu, (a) => {
         return latin_map[a] || a;
     });
 }
 export { latinize };
-//# sourceMappingURL=latinize.js.map

@@ -43,4 +43,3 @@ function getCodePoints(string) {
     });
 }
 export { capitalize, truncate, getCodePoints };
-//# sourceMappingURL=basic.js.map

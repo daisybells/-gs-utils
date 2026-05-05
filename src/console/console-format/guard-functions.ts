@@ -15,20 +15,20 @@ import type {
 } from "@/types/console/console-format.js";
 
 function isPointer(input: string): input is keyof typeof POINTERS {
-    return input in POINTERS;
+    return Object.hasOwn(POINTERS, input);
 }
 function isDecorationCode(input: string): input is DecorationCode {
-    return input in DECORATION_CODES;
+    return Object.hasOwn(DECORATION_CODES, input);
 }
 function isPrimaryCode(input: string): input is PrimaryCode {
-    return input in PRIMARY_CODES;
+    return Object.hasOwn(PRIMARY_CODES, input);
 }
 
 function isBrightnessCode(input: string): input is BrightnessCode {
-    return input in BRIGHTNESS_CODES;
+    return Object.hasOwn(BRIGHTNESS_CODES, input);
 }
 function isFgBgCode(input: string): input is FgBgCode {
-    return input in FGBG_CODES;
+    return Object.hasOwn(FGBG_CODES, input);
 }
 function isColorCode(input: string): input is ColorCode {
     return isPrimaryCode(input) && isBrightnessCode(input) && isFgBgCode(input);

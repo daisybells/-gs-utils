@@ -28,4 +28,3 @@ function sortArrayByFrequency(array, options) {
     });
 }
 export { sortArrayByFrequency };
-//# sourceMappingURL=sort-by-frequency.js.map

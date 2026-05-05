@@ -15,8 +15,8 @@
         "./types": "./dist/types/index.js"
     },
     "scripts": {
-        "debug": "tsx ./src/.debug/",
-        "build": "tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json"
+        "debug": "tsx ./.debug/index.js",
+        "build": "rm -rf ./dist/* && tsc --project ./tsconfig.json && tsc-alias -p ./tsconfig.json"
     },
     "repository": {
         "type": "git",
@@ -31,8 +31,10 @@
     "homepage": "https://github.com/daisybells/-gs-utils#readme",
     "devDependencies": {
         "@types/node": "^25.6.0",
+        "eslint": "^10.3.0",
+        "tsc-alias": "^1.8.16",
         "typescript": "^6.0.3",
-        "tsc-alias": "^1.8.16"
+        "eslint-gs-config": "link:../personal-configs/eslint"
     },
     "dependencies": {}
 }
