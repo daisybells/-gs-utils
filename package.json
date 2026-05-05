@@ -6,7 +6,6 @@
     "private": true,
     "type": "module",
     "exports": {
-        ".": "./dist/index.js",
         "./fs": "./dist/fs/index.js",
         "./misc": "./dist/misc/index.js",
         "./object": "./dist/object/index.js",
