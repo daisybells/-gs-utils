@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { TruncateOptions } from "../types/string.js";
 /**
  * Capitalize the first letter of every word.
@@ -8,6 +9,14 @@ function capitalize(string: string): string {
     return string.replaceAll(/\b\w(?!\s)/giu, (letter: string) =>
         letter.toUpperCase(),
     );
+}
+function removeExtension(filepath: string): string {
+    const lastSeparatorIndex = filepath.lastIndexOf(path.sep);
+    const lastDotIndex = filepath.lastIndexOf(".");
+    if (lastSeparatorIndex > lastDotIndex) {
+        return filepath;
+    }
+    return filepath.slice(0, filepath.lastIndexOf("."));
 }
 
 /**
@@ -55,4 +64,4 @@ function getCodePoints(string: string): number[] {
         return code;
     });
 }
-export { capitalize, truncate, getCodePoints };
+export { capitalize, truncate, getCodePoints, removeExtension };

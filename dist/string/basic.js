@@ -1,3 +1,4 @@
+import path from "node:path";
 /**
  * Capitalize the first letter of every word.
  * @param string
@@ -5,6 +6,14 @@
  */
 function capitalize(string) {
     return string.replaceAll(/\b\w(?!\s)/giu, (letter) => letter.toUpperCase());
+}
+function removeExtension(filepath) {
+    const lastSeparatorIndex = filepath.lastIndexOf(path.sep);
+    const lastDotIndex = filepath.lastIndexOf(".");
+    if (lastSeparatorIndex > lastDotIndex) {
+        return filepath;
+    }
+    return filepath.slice(0, filepath.lastIndexOf("."));
 }
 /**
  * Truncate a string based on a given max length.
@@ -42,4 +51,4 @@ function getCodePoints(string) {
         return code;
     });
 }
-export { capitalize, truncate, getCodePoints };
+export { capitalize, truncate, getCodePoints, removeExtension };
