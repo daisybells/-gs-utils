@@ -1,2 +1,10 @@
-export type Promisify<T extends (...args: any[]) => unknown> = T extends (...args: infer A) => infer R ? (...args: A) => Promise<Awaited<R>> : never;
-export type PromisifyVoid<T extends (...args: any[]) => unknown> = T extends (...args: infer A) => unknown ? (...args: A) => Promise<void> : never;
+type Success<T> = {
+    success: true;
+    data: T;
+};
+type Failure<E> = {
+    success: false;
+    error: E;
+};
+export type Result<S, E = Error> = Success<S> | Failure<E>;
+export {};

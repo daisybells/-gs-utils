@@ -1,12 +1,12 @@
-// DEBOUNCE
-export type Promisify<T extends (...args: any[]) => unknown> = T extends (
-    ...args: infer A
-) => infer R
-    ? (...args: A) => Promise<Awaited<R>>
-    : never;
+// ERROR HANDLER
+type Success<T> = {
+    success: true;
+    data: T;
+};
 
-export type PromisifyVoid<T extends (...args: any[]) => unknown> = T extends (
-    ...args: infer A
-) => unknown
-    ? (...args: A) => Promise<void>
-    : never;
+type Failure<E> = {
+    success: false;
+    error: E;
+};
+
+export type Result<S, E = Error> = Success<S> | Failure<E>;
