@@ -16,7 +16,7 @@ async function tryCatch(promise) {
 function succeeded(data) {
     return {
         success: true,
-        data,
+        data: data,
     };
 }
 function failed(error) {
