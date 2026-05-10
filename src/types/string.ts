@@ -1,29 +1,34 @@
 // BASIC
 export interface TruncateOptions {
-    /**
-     * Indicator that the input string has been truncated.
-     * @default "..."
-     */
-    indicator: string;
+	/**
+	 * Indicator that the input string has been truncated.
+	 * @default "..."
+	 */
+	indicator: string;
+	/**
+	 * Choose whether to truncate end (1) or beginning (-1) of string.
+	 * @default 1 (END)
+	 */
+	direction: -1 | 1;
 }
 
 // NORMALIZE
 export interface NormalizeStringOptions {
-    /**
-     * When false, removes all space characters from the string.
-     * @default false
-     */
-    preserveSpaces: boolean;
-    /**
-     * When true, reduces all space characters to a singular space.
-     * @default true
-     */
-    collapseWhiteSpace: boolean;
-    /**
-     * Character that spaces will be replaced with, if preserveSpaces = true.
-     * @default "-"
-     */
-    spaceCharacter: string;
+	/**
+	 * When false, removes all space characters from the string.
+	 * @default false
+	 */
+	preserveSpaces: boolean;
+	/**
+	 * When true, reduces all space characters to a singular space.
+	 * @default true
+	 */
+	collapseWhiteSpace: boolean;
+	/**
+	 * Character that spaces will be replaced with, if preserveSpaces = true.
+	 * @default "-"
+	 */
+	spaceCharacter: string;
 }
 
 // CFormatter
@@ -37,16 +42,16 @@ export type ClearFormattingFunction = (input: CFormatString) => string;
 export type ApplyFormattingFunction = (input: CFormatString) => string;
 
 export type CFormatter = {
-    /**
-     * Replace all C-Format specifiers in input string to be ignored.
-     */
-    clear: ClearFormattingFunction;
-    /**
-     * Apply C-Formatting to string.
-     */
-    apply: ApplyFormattingFunction;
+	/**
+	 * Replace all C-Format specifiers in input string to be ignored.
+	 */
+	clear: ClearFormattingFunction;
+	/**
+	 * Apply C-Formatting to string.
+	 */
+	apply: ApplyFormattingFunction;
 };
 
 export type DataMap = {
-    [key: string]: string;
+	[key: string]: string;
 };

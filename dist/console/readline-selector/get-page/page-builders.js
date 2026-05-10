@@ -1,4 +1,4 @@
-import { truncate } from "../../../string/basic.js";
+import { truncate } from "../../../string/wrap.js";
 import { initializeColorFormatter } from "../../console-format.js";
 function initializePageBuilders(config) {
     const { entries_per_page, max_width, page_count } = config;

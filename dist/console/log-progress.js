@@ -61,13 +61,14 @@ async function logPromiseArray(promises, message, options) {
 }
 function updateTerminalCurry(state) {
     return (message) => {
+        const escapedMessage = `${message}\n`;
         if (state.last_line_count > 0) {
             readline.moveCursor(process.stdout, -1000, -state.last_line_count);
         }
-        state.last_line_count = (message.match(/\n/gu) || []).length + 1;
+        state.last_line_count = (escapedMessage.match(/\n/gu) || []).length;
         readline.clearScreenDown(process.stdout);
         readline.clearLine(process.stdout, 0);
-        process.stdout.write(message + "\n");
+        process.stdout.write(escapedMessage);
     };
 }
 function generateMessageCurry(message) {

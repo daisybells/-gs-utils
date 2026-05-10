@@ -5,6 +5,8 @@ import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { createProgressBarGenerator } from "../console/progress-bar.js";
 import { createProgressLogger } from "@/console/log-progress.js";
+import { sleep } from "@/misc/debounce.js";
+import { truncate } from "@/string/wrap.js";
 
 import type { SyncDirectoriesOptions } from "@/types/fs.js";
 
@@ -122,6 +124,8 @@ async function syncDirectories(
 				}
 
 				await fs.copyFile(sourcePath, destinationPath);
+			} else {
+				await sleep(10);
 			}
 
 			logger?.log(sourcePath, copiedFiles, filesToCopyCount);
@@ -188,7 +192,7 @@ function createLogMessage() {
 		const decimalPercentage = index / max;
 		const progressBar = createProgressBar(decimalPercentage);
 		const outputPercentage = Math.floor(decimalPercentage * 100);
-		return `Copying file ${String(index)} of ${String(max)}\nCurrent file: ${currentFile}\n${progressBar} ${String(outputPercentage)}%\n`;
+		return `Copying file ${String(index)} of ${String(max)}\n${truncate(currentFile, 25, { direction: -1 })}\n${progressBar} ${String(outputPercentage)}%\n`;
 	};
 }
 

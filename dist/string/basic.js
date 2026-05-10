@@ -15,26 +15,6 @@ function removeExtension(filepath) {
     }
     return filepath.slice(0, filepath.lastIndexOf("."));
 }
-/**
- * Truncate a string based on a given max length.
- * @param string
- * @param maxLength
- * @param options
- * @returns
- */
-function truncate(string, maxLength, options) {
-    const { indicator } = {
-        indicator: "...",
-        ...(options || {}),
-    };
-    if (string.length <= maxLength) {
-        return string;
-    }
-    const slicedString = string
-        .slice(0, maxLength - indicator.length)
-        .replace(/\s$/u, "");
-    return `${slicedString}${indicator}`;
-}
 function getCodePoints(string) {
     if (string.length === 1) {
         const codePoint = string.codePointAt(0);
@@ -51,4 +31,4 @@ function getCodePoints(string) {
         return code;
     });
 }
-export { capitalize, truncate, getCodePoints, removeExtension };
+export { capitalize, getCodePoints, removeExtension };

@@ -4,6 +4,11 @@ export interface TruncateOptions {
      * @default "..."
      */
     indicator: string;
+    /**
+     * Choose whether to truncate end (1) or beginning (-1) of string.
+     * @default 1 (END)
+     */
+    direction: -1 | 1;
 }
 export interface NormalizeStringOptions {
     /**
