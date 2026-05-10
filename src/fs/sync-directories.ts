@@ -120,7 +120,7 @@ async function syncDirectories(
 
 			if (!dry) {
 				if (!existsSync(outputDirname)) {
-					await fs.mkdir(outputDirname);
+					await fs.mkdir(outputDirname, { recursive: true });
 				}
 
 				await fs.copyFile(sourcePath, destinationPath);
