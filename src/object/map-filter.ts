@@ -4,35 +4,26 @@
  * @param callback
  * @returns
  */
-function mapFilter<ElementType>(
-    array: ElementType[],
-    callback: (
-        value: ElementType,
-        index: number,
-        array: ElementType[],
-    ) => ElementType | null,
-): ElementType[] {
-    return array.reduce(
-        (
-            accumulator: ElementType[],
-            currentValue: ElementType,
-            index: number,
-            inputArray: ElementType[],
-        ) => {
-            const transformedValue: ElementType | null = callback(
-                currentValue,
-                index,
-                inputArray,
-            );
+function mapFilter<T, R>(
+	array: T[],
+	callback: (value: T, index: number, array: T[]) => R | null,
+): R[] {
+	return array.reduce(
+		(accumulator: R[], currentValue: T, index: number, inputArray: T[]) => {
+			const transformedValue: R | null = callback(
+				currentValue,
+				index,
+				inputArray,
+			);
 
-            if (transformedValue === null) {
-                return accumulator;
-            }
+			if (transformedValue === null) {
+				return accumulator;
+			}
 
-            return [...accumulator, transformedValue];
-        },
-        [],
-    );
+			return [...accumulator, transformedValue];
+		},
+		[],
+	);
 }
 
 export { mapFilter };

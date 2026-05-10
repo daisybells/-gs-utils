@@ -4,5 +4,5 @@
  * @param callback
  * @returns
  */
-declare function mapFilter<ElementType>(array: ElementType[], callback: (value: ElementType, index: number, array: ElementType[]) => ElementType | null): ElementType[];
+declare function mapFilter<T, R>(array: T[], callback: (value: T, index: number, array: T[]) => R | null): R[];
 export { mapFilter };
