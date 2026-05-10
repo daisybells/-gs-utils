@@ -7,12 +7,12 @@ import { logProgress } from "../console/log-progress.js";
 import { createProgressBarGenerator } from "../console/progress-bar.js";
 /**
  * Asynchronously sync an output directory to a given input directory.
- * @param inputDirectory Directory to be copied.
- * @param outputDirectory Directory to copy to.
+ * @param source Directory to be copied.
+ * @param destination Directory to copy to.
  * @param options
  */
-async function syncDirectories(inputDirectory, outputDirectory, options) {
-    console.log(`Starting directory sync...\nSource: ${inputDirectory}\nDestination: ${outputDirectory}`);
+async function syncDirectories(source, destination, options) {
+    console.log(`Starting directory sync...\nSource: ${source}\nDestination: ${destination}`);
     const { filterInput, filterOutput, compare, cleanDirectory, cleanEmpty, logProgress: doLogProgress, } = {
         filterInput: () => true,
         filterOutput: () => true,
@@ -22,18 +22,18 @@ async function syncDirectories(inputDirectory, outputDirectory, options) {
         logProgress: true,
         ...(options || {}),
     };
-    const inputFiles = await searchFilesRecursive(inputDirectory, {
+    const inputFiles = await searchFilesRecursive(source, {
         filter: filterInput,
     });
-    const outputFiles = await searchFilesRecursive(outputDirectory, {
+    const outputFiles = await searchFilesRecursive(destination, {
         filter: filterOutput,
     });
     const inputFilesSet = new Set(inputFiles);
     const outputFilesSet = new Set(outputFiles);
     console.log("Processing files to copy...");
     const filesToCopyPromises = inputFiles.map(async (filePath) => {
-        const inputPath = path.join(inputDirectory, filePath);
-        const outputPath = path.join(outputDirectory, filePath);
+        const inputPath = path.join(source, filePath);
+        const outputPath = path.join(destination, filePath);
         const existsInOutputPath = outputFilesSet.has(filePath);
         const outputData = {
             input: inputPath,
@@ -43,10 +43,10 @@ async function syncDirectories(inputDirectory, outputDirectory, options) {
             return outputData;
         }
         const filesAreSame = await compare(inputPath, outputPath);
-        if (!filesAreSame) {
-            return outputData;
+        if (filesAreSame) {
+            return null;
         }
-        return null;
+        return outputData;
     });
     const filesToCopy = (await Promise.all(filesToCopyPromises)).filter((file) => Boolean(file));
     const copyFilesSize = filesToCopy.length;
@@ -62,12 +62,12 @@ async function syncDirectories(inputDirectory, outputDirectory, options) {
     }
     if (cleanDirectory) {
         console.log("Cleaning output directory...");
-        await deleteRemainingFiles(inputFilesSet, outputDirectory)(outputFiles);
+        await deleteRemainingFiles(inputFilesSet, destination)(outputFiles);
     }
     if (cleanEmpty) {
         console.log("Cleaning empty folders...");
-        await cleanEmptyFolders(outputDirectory, {
-            filter: (file) => filterOutput(path.relative(outputDirectory, file)),
+        await cleanEmptyFolders(destination, {
+            filter: (file) => filterOutput(path.relative(destination, file)),
         });
     }
     console.log("\nDone.");

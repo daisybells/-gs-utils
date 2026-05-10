@@ -1,4 +1,4 @@
-export type FileFilter = (directory: string) => boolean | Promise<boolean>;
+export type FileFilter = (filepath: string) => boolean | Promise<boolean>;
 export type CleanEmptyFoldersOptions = {
     /**
      * Delete hidden files such as ".DS_Store" and "Desktop.ini" before search.
@@ -49,7 +49,7 @@ export type RecursiveFileFrame = {
     filepath: string;
     isDirectory: boolean;
 };
-export type CompareFiles = (pathA: string, pathB: string) => boolean | Promise<boolean>;
+export type CompareFiles = (source: string, destination: string) => boolean | Promise<boolean>;
 export type FilesToCopyData = {
     input: string;
     output: string;
