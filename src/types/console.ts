@@ -5,16 +5,16 @@
 export type ProgressBarGenerator = (percentage: number) => string;
 
 export type CreateProgressBarGeneratorOptions = {
-    /**
-     * Character for active progrss bar cell.
-     * @default "\u2589"
-     */
-    active: string;
-    /**
-     * Character for inactive progress bar cell.
-     * @default "_"
-     */
-    inactive: string;
+	/**
+	 * Character for active progrss bar cell.
+	 * @default "\u2589"
+	 */
+	active: string;
+	/**
+	 * Character for inactive progress bar cell.
+	 * @default "_"
+	 */
+	inactive: string;
 };
 
 // LOG PROGRESS
@@ -22,20 +22,20 @@ export type CreateProgressBarGeneratorOptions = {
  * Callback to manually build message without C formatter.
  */
 export type GenerateMessage<T> = (
-    currentValue: T,
-    index: number,
-    max: number,
+	currentValue: T,
+	index: number,
+	max: number,
 ) => string;
 
+export type LogState = {
+	last_time: number;
+	last_line_count: number;
+};
+
 export type LogProgressOptions = {
-    /**
-     * Process promises synchronously (true) or asynchronously (false).
-     * @default false
-     */
-    sync: boolean;
-    /**
-     * Determine how often the progress log updates (ms)
-     * @default 30
-     */
-    throttleRate: number;
+	/**
+	 * Determine how often the progress log updates (ms)
+	 * @default 30
+	 */
+	throttleRate: number;
 };

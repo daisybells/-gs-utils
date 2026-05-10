@@ -1,1 +1,2 @@
+// CLEAN EMPTY FOLDERS
 export {};

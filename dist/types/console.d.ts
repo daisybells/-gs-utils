@@ -18,12 +18,11 @@ export type CreateProgressBarGeneratorOptions = {
  * Callback to manually build message without C formatter.
  */
 export type GenerateMessage<T> = (currentValue: T, index: number, max: number) => string;
+export type LogState = {
+    last_time: number;
+    last_line_count: number;
+};
 export type LogProgressOptions = {
-    /**
-     * Process promises synchronously (true) or asynchronously (false).
-     * @default false
-     */
-    sync: boolean;
     /**
      * Determine how often the progress log updates (ms)
      * @default 30

@@ -36,9 +36,14 @@ async function searchFilesRecursive(
 			return;
 		}
 
-		const outputPath = getFilepath(filepath);
+		const relativePath = path.relative(directory, filepath);
+		const isIncluded = await filter(relativePath);
+		if (!isIncluded) {
+			return;
+		}
 
-		const isIncluded = await filter(outputPath);
+		const outputPath = getFilepath(relativePath);
+
 		if (isIncluded) {
 			files.push(outputPath);
 		}
@@ -76,18 +81,16 @@ async function searchFilesRecursive(
 
 	return files;
 
-	function getFilepath(filepath: string) {
+	function getFilepath(directoryFile: string) {
 		if (fullPath) {
-			return path.resolve(filepath);
+			return path.resolve(directory, directoryFile);
 		}
-
-		const relativePath = path.relative(directory, filepath);
 
 		if (asRoot) {
-			return path.join("/", relativePath);
+			return path.join("/", directoryFile);
 		}
 
-		return relativePath;
+		return directoryFile;
 	}
 }
 

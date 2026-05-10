@@ -5,4 +5,5 @@ import type { CleanEmptyFoldersOptions } from "../types/fs.js";
  * @param options
  */
 declare function cleanEmptyFolders(directory: string, options?: Partial<CleanEmptyFoldersOptions>): Promise<void>;
-export { cleanEmptyFolders };
+declare function isHiddenFile(filename: string): boolean;
+export { cleanEmptyFolders, isHiddenFile };

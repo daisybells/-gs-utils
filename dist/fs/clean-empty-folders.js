@@ -8,7 +8,7 @@ const HIDDEN_FILES_SET = new Set([".DS_Store", "Desktop.ini"]);
  * @param options
  */
 async function cleanEmptyFolders(directory, options) {
-    const { deleteHiddenFiles, filter, maxDepth, dry, } = {
+    const { deleteHiddenFiles, filter, maxDepth, dry } = {
         deleteHiddenFiles: true,
         filter: () => true,
         maxDepth: 0,
@@ -32,8 +32,7 @@ async function cleanEmptyFolders(directory, options) {
         }
         const currentFile = frame.filepath;
         if (!frame.isDirectory) {
-            const shouldBeDeleted = deleteHiddenFiles &&
-                HIDDEN_FILES_SET.has(path.basename(currentFile));
+            const shouldBeDeleted = deleteHiddenFiles && isHiddenFile(path.basename(currentFile));
             if (shouldBeDeleted) {
                 await deleteFile(frame);
             }
@@ -63,7 +62,10 @@ async function cleanEmptyFolders(directory, options) {
         }
     }
     async function deleteFile(frame) {
-        const isIncluded = await filter(frame.filepath);
+        if (!frame.parent) {
+            return;
+        }
+        const isIncluded = await filter(path.relative(directory, frame.filepath));
         if (!isIncluded) {
             return;
         }
@@ -76,10 +78,10 @@ async function cleanEmptyFolders(directory, options) {
             }
         }
         console.log(`${frame.isDirectory ? "rmdir" : "rm"}: ${frame.filepath}`);
-        if (!frame.parent) {
-            return;
-        }
         frame.parent.size -= 1;
     }
 }
-export { cleanEmptyFolders };
+function isHiddenFile(filename) {
+    return HIDDEN_FILES_SET.has(filename);
+}
+export { cleanEmptyFolders, isHiddenFile };
