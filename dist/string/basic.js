@@ -31,4 +31,10 @@ function getCodePoints(string) {
         return code;
     });
 }
-export { capitalize, getCodePoints, removeExtension };
+function randomString(length) {
+    return Array.from(new Array(length), (v, i) => {
+        const value = Math.floor(Math.random() * 52);
+        return String.fromCodePoint(value <= 25 ? value + 65 : value + 71);
+    }).join("");
+}
+export { capitalize, getCodePoints, removeExtension, randomString };

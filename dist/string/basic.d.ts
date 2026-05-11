@@ -6,4 +6,5 @@
 declare function capitalize(string: string): string;
 declare function removeExtension(filepath: string): string;
 declare function getCodePoints(string: string): number[];
-export { capitalize, getCodePoints, removeExtension };
+declare function randomString(length: number): string;
+export { capitalize, getCodePoints, removeExtension, randomString };
