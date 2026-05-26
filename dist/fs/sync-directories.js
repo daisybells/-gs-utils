@@ -104,7 +104,7 @@ async function syncDirectories(source, destination, options) {
                 continue;
             }
             const fullPath = path.join(destination, destinationFile);
-            if (!dry) {
+            if (!dry && existsSync(fullPath)) {
                 await fs.rm(fullPath);
             }
             removedFiles++;
