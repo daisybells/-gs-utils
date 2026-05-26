@@ -101,6 +101,15 @@ export type SyncDirectoriesOptions = {
     /**
      * Determine the metrics in which files are compared to each other.
      * Comperes fs.stats.size by default. Can be async.
+     * @example
+     * import { stat } from "node:fs/promises"
+     * await syncDirectories("./foo", { compare: compareSize });
+     * // Full filepaths are used for inputs to comparison function.
+     * async function compareSize(source, destination) {
+     * 	const sourceStats = await stat(source); // Full source path
+     * 	const destStats = await stat(destination); // Full destination path
+     * 	return sourceStats.size === destStats.size
+     * }
      */
     compare: (source: string, destination: string) => boolean | Promise<boolean>;
     /**

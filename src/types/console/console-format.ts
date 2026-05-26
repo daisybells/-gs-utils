@@ -32,6 +32,14 @@ export type DecorationCode = keyof typeof DECORATION_CODES;
 export type ColorCode = PrimaryCode | BrightnessCode | FgBgCode;
 
 export type CLIColorFormatter = {
+    /**
+     * Apply formatting to console using format specifiers.
+     * - %( black | red | green | yellow | blue | magenta | cyan | white | bright )f changes color
+     * - %( bold | dim | italic | underline | blink | reverse | hidden | strikethrough)d changes decoration
+     * - %r resets formatting.
+     * @param string
+     * @returns Formatted string.
+     */
     apply: (string: string) => ColoredCLIString;
     format: (string: string) => StringFormatter;
     toColor: (string: string, ...args: ColorCode[]) => ColoredCLIString;
