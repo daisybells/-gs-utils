@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getRecursiveFileCall } from "./helpers/get-recursive-call.js";
+import { existsSync } from "node:fs";
 const HIDDEN_FILES_SET = new Set([".DS_Store", "Desktop.ini"]);
 /**
  * Remove empty folders from a given directory.
@@ -8,7 +9,7 @@ const HIDDEN_FILES_SET = new Set([".DS_Store", "Desktop.ini"]);
  * @param options
  */
 async function cleanEmptyFolders(directory, options) {
-    const { deleteHiddenFiles, filter, maxDepth, dry } = {
+    const { deleteHiddenFiles, filter, maxDepth, dry, } = {
         deleteHiddenFiles: true,
         filter: () => true,
         maxDepth: 0,
@@ -69,7 +70,7 @@ async function cleanEmptyFolders(directory, options) {
         if (!isIncluded) {
             return;
         }
-        if (!dry) {
+        if (!dry && existsSync(frame.filepath)) {
             if (frame.isDirectory) {
                 await fs.rmdir(frame.filepath);
             }
